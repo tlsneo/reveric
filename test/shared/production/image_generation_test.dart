@@ -158,6 +158,121 @@ void main() {
     await root.delete(recursive: true);
   });
 
+  for (final model in [
+    'gpt-image-2.5',
+    'custom-render-model',
+    'local/flux-dev',
+  ]) {
+    for (final withReference in [false, true]) {
+      test(
+        'unregistered $model submits unchanged with reference=$withReference',
+        () async {
+          final provider = (await appDb.aiProviderDao.getById('image'))!;
+          final baseUrl = model.startsWith('local/')
+              ? 'http://127.0.0.1:8000/v1'
+              : 'https://images.example/v1';
+          await appDb.aiProviderDao.upsert(
+            provider.copyWith(
+              type: 'openai_compatible',
+              baseUrl: baseUrl,
+              imageModels: [model],
+            ),
+          );
+          final clip = (await canvas.shots.getShot(node.clipId!))!;
+          await canvas.shots.apply(clip.id, {
+            ...canvas.shots.snapshot(clip),
+            'model_id': model,
+            'ratio': 'auto',
+            'resolution': 'auto',
+          });
+          if (withReference) {
+            await canvas.shots.restoreInputs(clip.id, [
+              ProductionInput.asset(
+                oldAsset,
+                VideoInputRole.reference_image,
+              ).toJson(),
+            ]);
+          }
+          final preview = await ProductionImageGenerateOrchestrator().preview(
+            canvas,
+            node.id,
+          );
+          expect(preview.request.modelId, model);
+          expect(preview.request.size, isNull);
+          expect(preview.request.references, hasLength(withReference ? 1 : 0));
+          var calls = 0;
+          final service = jobs((provider, request, _) async {
+            calls++;
+            expect(provider.type, 'openai_compatible');
+            expect(provider.effectiveBaseUrl, baseUrl);
+            expect(request.modelId, model);
+            expect(request.size, isNull);
+            expect(request.ratio, 'auto');
+            expect(request.resolution, 'auto');
+            expect(
+              request.references.map((r) => r.assetId),
+              withReference ? [oldAsset] : <String>[],
+            );
+            return AiImageGenerationResult(localFilePath: output.path);
+          });
+          try {
+            final task = await service.requireRun(
+              await submit(service, preview),
+            );
+            expect(calls, 1);
+            expect(task.status, GenerationTaskStatus.completed);
+            expect(task.modelId, model);
+            expect(task.imageRequest.modelId, model);
+          } finally {
+            await service.shutdown();
+          }
+        },
+      );
+    }
+  }
+
+  test(
+    'unregistered models retain provider and configuration validation',
+    () async {
+      final provider = (await appDb.aiProviderDao.getById(
+        'image',
+      ))!.copyWith(type: 'openai_compatible', imageModels: ['gpt-image-2.5']);
+      final capabilities = ProductionImageCapabilities(
+        provider,
+        'gpt-image-2.5',
+      );
+      expect(capabilities.isSupported, isTrue);
+      expect(capabilities.verifiedCapabilities, isNull);
+      expect(capabilities.ratios, ['auto']);
+      expect(capabilities.resolutions, ['auto']);
+      expect(capabilities.size('auto', 'auto'), isNull);
+      for (final invalid in [
+        provider.copyWith(enabled: false),
+        provider.copyWith(type: 'anthropic'),
+        provider.copyWith(imageModels: ['different-model']),
+      ]) {
+        expect(
+          () => ProductionImageCapabilities(invalid, 'gpt-image-2.5').validate(
+            prompt: 'Body',
+            ratio: 'auto',
+            resolution: 'auto',
+            references: 0,
+          ),
+          throwsFormatException,
+        );
+      }
+      expect(
+        () => capabilities.validate(
+          prompt: ' ',
+          ratio: 'auto',
+          resolution: 'auto',
+          references: 0,
+        ),
+        throwsFormatException,
+      );
+    },
+  );
+
   test(
     'derived requests retain their prepared values after later draft edits',
     () async {

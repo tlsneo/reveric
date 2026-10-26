@@ -153,6 +153,7 @@ class _ImageForm extends HookConsumerWidget {
     final capability = provider == null
         ? null
         : ProductionImageCapabilities(provider, model.$2);
+    final referenceLimit = capability?.verifiedCapabilities?.maxReferences;
     String? blockedReason;
     if (!providers.hasData) {
       blockedReason = context.t(
@@ -383,7 +384,9 @@ class _ImageForm extends HookConsumerWidget {
                           ProductionInputTile(
                             service: service,
                             input: inputs.value[i],
-                            valid: i < (capability?.maxReferences ?? 0),
+                            valid:
+                                capability?.isSupported == true &&
+                                (referenceLimit == null || i < referenceLimit),
                             onRole: null,
                             onMove: inputs.value.length < 2
                                 ? null
@@ -501,13 +504,7 @@ class _ImageForm extends HookConsumerWidget {
                                     in providers.data ?? <AiProvider>[])
                                   if (p.enabled &&
                                       ProductionImageCapabilities.supports(p))
-                                    for (final m
-                                        in p.availableImageModels.where(
-                                          (m) => ProductionImageCapabilities(
-                                            p,
-                                            m,
-                                          ).isSupported,
-                                        ))
+                                    for (final m in p.availableImageModels)
                                       RevericSelectItem(
                                         value: (p.id, m),
                                         label: m,

@@ -99,7 +99,7 @@ class ProductionImageRequest {
   }
 }
 
-/// 制作场景的图像能力：只允许渠道登记了能力的型号，底层生图接口本身不拦截。
+/// 制作场景的图像规格：已知型号按登记能力校验，未登记型号交由图片接口处理。
 class ProductionImageCapabilities {
   const ProductionImageCapabilities(this.provider, this.model);
   final AiProvider provider;
@@ -112,8 +112,8 @@ class ProductionImageCapabilities {
   ImageModelCapabilities get _capabilities =>
       _channel?.capabilities ?? const ImageModelCapabilities();
 
-  /// 渠道登记了该型号的能力，可以在制作中选用。
-  bool get isSupported => supports(provider) && _channel != null;
+  /// 型号登记不作为准入条件；图片协议与用户配置仍须有效。
+  bool get isSupported => supports(provider);
 
   /// 只暴露渠道登记的能力，未登记型号返回 null。
   ImageModelCapabilities? get verifiedCapabilities =>
@@ -123,7 +123,7 @@ class ProductionImageCapabilities {
   List<String> get resolutions => _capabilities.resolutions.toList();
   int get maxReferences => _capabilities.maxReferences;
   String? size(String ratio, String resolution) =>
-      _capabilities.size(ratio, resolution);
+      verifiedCapabilities?.size(ratio, resolution);
 
   void validate({
     required String prompt,
@@ -134,10 +134,12 @@ class ProductionImageCapabilities {
     if (!isSupported ||
         !provider.enabled ||
         !provider.availableImageModels.contains(model) ||
-        prompt.trim().isEmpty) {
+        prompt.trim().isEmpty ||
+        references < 0) {
       throw const FormatException('Unsupported image generation configuration');
     }
-    _capabilities.validateReferences(references);
-    _capabilities.validateSize(size(ratio, resolution), references: references);
+    final known = verifiedCapabilities;
+    known?.validateReferences(references);
+    known?.validateSize(size(ratio, resolution), references: references);
   }
 }
