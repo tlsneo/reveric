@@ -1530,6 +1530,7 @@ void main() {
       }
     });
 
+    // Six cases launch twelve fresh Dart workers; allow for cold JIT startup.
     test('fresh processes reject every immutable tamper without repair',
         () async {
       final fixture = _storeFixture(recipe, keyPair);
@@ -1625,7 +1626,7 @@ void main() {
       } finally {
         await server.close();
       }
-    });
+    }, timeout: const Timeout(Duration(minutes: 2)));
 
     test('fresh processes reject extra anchor inventory without repair',
         () async {

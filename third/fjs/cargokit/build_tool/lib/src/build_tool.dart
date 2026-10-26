@@ -226,7 +226,8 @@ class BuildPrecompiledGenerationCommand extends Command {
       ..addMultiOption(
         'target',
         help: 'Pinned Rust target triple. Repeat for each target.',
-      );
+      )
+      ..addFlag('composites', defaultsTo: true);
   }
 
   @override
@@ -243,6 +244,7 @@ class BuildPrecompiledGenerationCommand extends Command {
       outputDir: argResults!['output-dir'] as String,
       tempDir: argResults!['temp-dir'] as String,
       targetTriples: argResults!['target'] as List<String>,
+      buildComposites: argResults!['composites'] as bool,
     );
     await generation.run();
   }

@@ -14,8 +14,18 @@ BINARIES = ROOT / 'third/fjs/darwin/fjs/Binaries'
 ARCHIVE = BINARIES / 'fjs.xcframework.zip'
 RECORD = BINARIES / 'reveric-build.json'
 RUST = '1.97.1'
-TARGETS = ['aarch64-apple-ios', 'aarch64-apple-ios-sim', 'x86_64-apple-ios',
-           'aarch64-apple-darwin', 'x86_64-apple-darwin']
+
+
+def macos_arch():
+    machine = platform.machine()
+    if machine not in ('arm64', 'x86_64'):
+        raise SystemExit('Unsupported macOS architecture: ' + machine)
+    return machine
+
+
+def macos_target():
+    return {'arm64': 'aarch64-apple-darwin',
+            'x86_64': 'x86_64-apple-darwin'}[macos_arch()]
 
 
 def run(*args):
@@ -36,10 +46,10 @@ def identity():
     # Flutter only hosts the CargoKit build tool; dart-sys ships its own Dart API
     # headers, so the SDK revision does not reach the native archive.
     tools = {'rust': run('rustc', '+' + RUST, '-Vv'),
-             'host': platform.system(), 'architecture': platform.machine(), 'targets': TARGETS}
+             'host': platform.system(), 'architecture': platform.machine()}
     if platform.system() == 'Darwin':
-        tools.update(xcode=run('xcodebuild', '-version'),
-                     iphoneos=run('xcrun', '--sdk', 'iphoneos', '--show-sdk-version'),
+        tools.update(targets=[macos_target()],
+                     xcode=run('xcodebuild', '-version'),
                      macosx=run('xcrun', '--sdk', 'macosx', '--show-sdk-version'))
     value = {'inputs': inputs, 'toolchain': tools}
     return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest(), value
@@ -49,12 +59,18 @@ def verify(key):
     if not RECORD.is_file() or not ARCHIVE.is_file():
         return False
     record = json.loads(RECORD.read_text())
-    checksum = ARCHIVE.with_suffix('.zip.checksum').read_text().strip()
+    sidecar = ARCHIVE.with_suffix('.zip.checksum')
+    if not sidecar.is_file():
+        return False
+    checksum = sidecar.read_text().strip()
     return record['key'] == key and record['archive_sha256'] == digest(ARCHIVE) == checksum
 
 
 def main():
     command = sys.argv[1] if len(sys.argv) > 1 else 'key'
+    if command == 'arch':
+        print(macos_arch())
+        return
     key, value = identity()
     if command == 'key':
         print('fjs-' + key)
@@ -68,7 +84,7 @@ def main():
         checksum = ARCHIVE.with_suffix('.zip.checksum').read_text().strip()
         if digest(ARCHIVE) != checksum:
             raise SystemExit('FJS generation checksum mismatch')
-        generation = ROOT / 'third/fjs/build/darwin-xcframework/generation/manifest.json'
+        generation = ROOT / ('third/fjs/build/darwin-xcframework-macos-' + macos_arch()) / 'generation/manifest.json'
         # CargoKit writes its own recipe/assets manifest alongside the generation.
         candidates = list(generation.parent.glob('*.json'))
         manifest = next((p for p in candidates if json.loads(p.read_text()).get('scope') == 'cargokit-local-precompiled-generation'), None)
@@ -77,9 +93,16 @@ def main():
         provenance = json.loads(manifest.read_text())
         if provenance['recipe']['rust_toolchain'] != RUST:
             raise SystemExit('CargoKit generation used a different Rust toolchain')
-        asset = next(a for a in provenance['assets'] if a['name'] == ARCHIVE.name)
-        if asset['sha256'] != checksum:
-            raise SystemExit('Archive differs from local generation')
+        target = macos_target()
+        expected_assets = {target + '_libfjs.a', target + '_libfjs.dylib'}
+        if {a['name'] for a in provenance['assets']} != expected_assets:
+            raise SystemExit('Local generation must contain only the requested macOS target')
+        for asset in provenance['assets']:
+            if digest(generation.parent / asset['path']) != asset['sha256']:
+                raise SystemExit('Retained target differs from local generation')
+        assembled = generation.parent / 'composites/swiftpm' / ARCHIVE.name
+        if digest(assembled) != checksum:
+            raise SystemExit('Archive differs from local macOS assembly')
         RECORD.write_text(json.dumps({'key': key, 'archive_sha256': checksum,
                                       'source': value, 'generation': provenance}, indent=2) + '\n')
         print('Recorded patched archive: ' + checksum)
@@ -90,7 +113,7 @@ def main():
         binary = app / 'Contents/Frameworks/fjs.framework/fjs'
         with tempfile.TemporaryDirectory(prefix='codemode-artifact-') as temporary:
             with zipfile.ZipFile(ARCHIVE) as archive:
-                member = next(n for n in archive.namelist() if n.endswith('macos-arm64_x86_64/fjs.framework/Versions/A/fjs'))
+                member = 'fjs.xcframework/macos-' + macos_arch() + '/fjs.framework/Versions/A/fjs'
                 reference = archive.extract(member, temporary)
             def uuids(path):
                 return {tuple(line.split()[1:3]) for line in run('dwarfdump', '--uuid', str(path)).splitlines()}
@@ -98,7 +121,7 @@ def main():
                 raise SystemExit('Packaged FJS UUIDs differ from patched source archive')
         print('Packaged FJS UUIDs match patched archive: ' + str(binary))
     else:
-        raise SystemExit('usage: codemode_artifact.py key|verify|record|verify-app APP')
+        raise SystemExit('usage: codemode_artifact.py arch|key|verify|record|verify-app APP')
 
 
 if __name__ == '__main__':

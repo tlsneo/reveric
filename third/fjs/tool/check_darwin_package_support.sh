@@ -4,14 +4,16 @@ set -eu
 RUN_STRUCTURE=1
 REQUIRE_CHECKSUM=0
 ARTIFACT=""
+MACOS_ARCH=""
 PACKAGE_ARTIFACT="darwin/fjs/Binaries/fjs.xcframework.zip"
 
 usage() {
   cat <<'USAGE'
-Usage: tool/check_darwin_package_support.sh [--artifact PATH | --require-artifact]
+Usage: tool/check_darwin_package_support.sh [--artifact PATH | --require-artifact] [--macos-arch arm64|x86_64]
 
 Checks Darwin package structure by default. --artifact validates only the
-exact supplied XCFramework zip. --require-artifact checks both structure and
+exact supplied XCFramework zip. --macos-arch validates a host-only macOS zip.
+--require-artifact checks both structure and
 the package-local darwin/fjs/Binaries/fjs.xcframework.zip.
 USAGE
 }
@@ -31,6 +33,14 @@ while [ "$#" -gt 0 ]; do
       ARTIFACT="$PACKAGE_ARTIFACT"
       REQUIRE_CHECKSUM=1
       shift
+      ;;
+    --macos-arch)
+      [ "$#" -ge 2 ] || { usage >&2; exit 2; }
+      case "$2" in
+        arm64|x86_64) MACOS_ARCH="$2" ;;
+        *) usage >&2; exit 2 ;;
+      esac
+      shift 2
       ;;
     -h|--help)
       usage
@@ -320,7 +330,7 @@ fjs.xcframework.zip.checksum'
     fail "assembler must validate and checksum the temporary zip before publication"
 
   require_line_count "tool/build_fjs_xcframework.sh" \
-    '  sh "$ROOT_DIR/cargokit/run_build_tool.sh" build-precompiled-generation \' 1
+    '    sh "$ROOT_DIR/cargokit/run_build_tool.sh" build-precompiled-generation \' 2
   for rust_target in \
     aarch64-apple-ios \
     aarch64-apple-ios-sim \
@@ -329,13 +339,13 @@ fjs.xcframework.zip.checksum'
     x86_64-apple-darwin; do
     require_contains "tool/build_fjs_xcframework.sh" "--target $rust_target"
   done
-  wrapper_target_count="$(grep -Ec '^    --target ' tool/build_fjs_xcframework.sh || true)"
+  wrapper_target_count="$(grep -Ec '^[[:space:]]*--target (aarch64|x86_64)-apple-' tool/build_fjs_xcframework.sh || true)"
   [ "$wrapper_target_count" -eq 5 ] ||
     fail "tool/build_fjs_xcframework.sh must request exactly five Rust targets"
   require_contains "tool/build_fjs_xcframework.sh" 'GENERATION_ROOT/composites/swiftpm'
   require_not_contains "tool/build_fjs_xcframework.sh" 'build-pod'
   require_not_contains "tool/build_fjs_xcframework.sh" 'xcodebuild -create-xcframework'
-  require_not_contains "tool/build_fjs_xcframework.sh" 'assemble_fjs_xcframework.sh'
+  require_contains "tool/build_fjs_xcframework.sh" '--no-composites'
   require_contains "tool/prepare_darwin_release.sh" "--require-artifact"
   require_contains "tool/prepare_darwin_release.sh" "check_frb_codegen.sh"
   require_contains "tool/prepare_darwin_release.sh" "flutter pub publish --dry-run"
@@ -497,22 +507,41 @@ check_artifact() {
 
   xcframework="$extracted/fjs.xcframework"
   require_file "$xcframework/Info.plist"
-  ios_framework="$xcframework/ios-arm64/fjs.framework"
-  simulator_framework="$xcframework/ios-arm64_x86_64-simulator/fjs.framework"
-  macos_framework="$xcframework/macos-arm64_x86_64/fjs.framework"
-  require_file "$ios_framework/fjs"
-  require_file "$ios_framework/Info.plist"
-  require_file "$simulator_framework/fjs"
-  require_file "$simulator_framework/Info.plist"
-  require_file "$macos_framework/Versions/A/fjs"
-  require_file "$macos_framework/Versions/A/Resources/Info.plist"
+  if [ -n "$MACOS_ARCH" ]; then
+    python3 - "$xcframework/Info.plist" "$MACOS_ARCH" <<'PY'
+import plistlib
+import sys
+with open(sys.argv[1], 'rb') as source:
+    libraries = plistlib.load(source)['AvailableLibraries']
+expected = {'LibraryIdentifier': 'macos-' + sys.argv[2],
+            'LibraryPath': 'fjs.framework',
+            'SupportedArchitectures': [sys.argv[2]], 'SupportedPlatform': 'macos'}
+if len(libraries) != 1 or any(libraries[0].get(k) != v for k, v in expected.items()):
+    raise SystemExit('XCFramework must contain exactly the requested macOS architecture')
+PY
+    macos_framework="$xcframework/macos-$MACOS_ARCH/fjs.framework"
+    require_file "$macos_framework/Versions/A/fjs"
+    require_file "$macos_framework/Versions/A/Resources/Info.plist"
+    require_plist_version "$macos_framework/Versions/A/Resources/Info.plist"
+    require_architectures "$macos_framework/Versions/A/fjs" "$MACOS_ARCH"
+  else
+    ios_framework="$xcframework/ios-arm64/fjs.framework"
+    simulator_framework="$xcframework/ios-arm64_x86_64-simulator/fjs.framework"
+    macos_framework="$xcframework/macos-arm64_x86_64/fjs.framework"
+    require_file "$ios_framework/fjs"
+    require_file "$ios_framework/Info.plist"
+    require_file "$simulator_framework/fjs"
+    require_file "$simulator_framework/Info.plist"
+    require_file "$macos_framework/Versions/A/fjs"
+    require_file "$macos_framework/Versions/A/Resources/Info.plist"
 
-  require_plist_version "$ios_framework/Info.plist"
-  require_plist_version "$simulator_framework/Info.plist"
-  require_plist_version "$macos_framework/Versions/A/Resources/Info.plist"
-  require_architectures "$ios_framework/fjs" "arm64"
-  require_architectures "$simulator_framework/fjs" "arm64 x86_64"
-  require_architectures "$macos_framework/Versions/A/fjs" "arm64 x86_64"
+    require_plist_version "$ios_framework/Info.plist"
+    require_plist_version "$simulator_framework/Info.plist"
+    require_plist_version "$macos_framework/Versions/A/Resources/Info.plist"
+    require_architectures "$ios_framework/fjs" "arm64"
+    require_architectures "$simulator_framework/fjs" "arm64 x86_64"
+    require_architectures "$macos_framework/Versions/A/fjs" "arm64 x86_64"
+  fi
 
   require_symlink "$macos_framework/Versions/Current" "A"
   require_symlink "$macos_framework/fjs" "Versions/Current/fjs"
@@ -520,11 +549,19 @@ check_artifact() {
   require_symlink "$macos_framework/Modules" "Versions/Current/Modules"
   require_symlink "$macos_framework/Resources" "Versions/Current/Resources"
 
-  require_macho_slice "$ios_framework/fjs" "arm64" "IOS" "12.0"
-  require_macho_slice "$simulator_framework/fjs" "x86_64" "IOSSIMULATOR" "12.0"
-  require_macho_slice "$simulator_framework/fjs" "arm64" "IOSSIMULATOR" "14.0"
-  require_macho_slice "$macos_framework/Versions/A/fjs" "x86_64" "MACOS" "10.14"
-  require_macho_slice "$macos_framework/Versions/A/fjs" "arm64" "MACOS" "11.0"
+  if [ -n "$MACOS_ARCH" ]; then
+    case "$MACOS_ARCH" in
+      arm64) macos_minos=11.0 ;;
+      x86_64) macos_minos=10.14 ;;
+    esac
+    require_macho_slice "$macos_framework/Versions/A/fjs" "$MACOS_ARCH" "MACOS" "$macos_minos"
+  else
+    require_macho_slice "$ios_framework/fjs" "arm64" "IOS" "12.0"
+    require_macho_slice "$simulator_framework/fjs" "x86_64" "IOSSIMULATOR" "12.0"
+    require_macho_slice "$simulator_framework/fjs" "arm64" "IOSSIMULATOR" "14.0"
+    require_macho_slice "$macos_framework/Versions/A/fjs" "x86_64" "MACOS" "10.14"
+    require_macho_slice "$macos_framework/Versions/A/fjs" "arm64" "MACOS" "11.0"
+  fi
 
   "$DART_EXECUTABLE" tool/check_frb_content_hash.dart "$macos_framework/Versions/A/fjs" "$EXPECTED_FRB_CONTENT_HASH" ||
     fail "host macOS binary FRB content hash does not match generated bindings"

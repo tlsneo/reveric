@@ -7,6 +7,7 @@ import 'package:build_tool/src/composite_artifacts.dart';
 import 'package:build_tool/src/options.dart';
 import 'package:build_tool/src/precompile_binaries.dart';
 import 'package:build_tool/src/target.dart';
+import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
@@ -58,10 +59,25 @@ void main() {
     expect(arguments['manifest-dir'], '/manifest');
     expect(arguments['output-dir'], '/output');
     expect(arguments['temp-dir'], '/temp');
+    expect(arguments['composites'], isTrue);
     expect(arguments['target'], [
       'aarch64-apple-ios',
       'aarch64-apple-darwin',
     ]);
+    expect(
+      command.argParser.parse(const [
+        '--manifest-dir',
+        '/manifest',
+        '--output-dir',
+        '/output',
+        '--temp-dir',
+        '/temp',
+        '--no-composites',
+        '--target',
+        'aarch64-apple-darwin',
+      ])['composites'],
+      isFalse,
+    );
   });
 
   test('composite uses controlled argv/env and atomically retains outputs',
@@ -252,16 +268,94 @@ void main() {
     expect(fragment.containsKey('signature'), isFalse);
   });
 
+  for (final targets in const [
+    ['aarch64-apple-darwin'],
+    ['aarch64-apple-ios', 'aarch64-apple-darwin'],
+  ]) {
+    test(
+        'local generation without composites retains ${targets.length} targets',
+        () async {
+      _writeCrate(workspace);
+      final builtTargets = <String>[];
+      var compositeCalls = 0;
+      final output = path.join(temp.path, 'generation');
+      final fragmentFile = await LocalPrecompiledGeneration(
+        manifestDir: workspace.path,
+        outputDir: output,
+        tempDir: path.join(temp.path, 'build'),
+        targetTriples: targets,
+        buildComposites: false,
+        targetBuilder: (target, environment, toolchain) async {
+          expect(toolchain, '1.88.0');
+          builtTargets.add(target.rust);
+          final buildOutput =
+              Directory(path.join(environment.targetTempDir, target.rust))
+                ..createSync(recursive: true);
+          for (final name in ['libfjs.a', 'libfjs.dylib']) {
+            File(path.join(buildOutput.path, name))
+                .writeAsStringSync('$name:${target.rust}');
+          }
+          return buildOutput.path;
+        },
+        currentHost: CompositeHost.macos,
+        compositeProcessRunner: (_) async {
+          compositeCalls++;
+          throw StateError('must not assemble composites');
+        },
+      ).run();
+
+      expect(builtTargets, targets);
+      expect(compositeCalls, 0);
+      expect(Directory(path.join(output, 'composites')).existsSync(), isFalse);
+      expect(
+        Directory(path.join(output, 'targets'))
+            .listSync()
+            .map((entity) => path.basename(entity.path)),
+        unorderedEquals(targets),
+      );
+      final fragment =
+          jsonDecode(fragmentFile.readAsStringSync()) as Map<String, dynamic>;
+      expect((fragment['recipe'] as Map)['rust_targets'], [
+        'aarch64-apple-darwin',
+        'aarch64-apple-ios',
+      ]);
+      expect(
+          fragment['assets'],
+          unorderedEquals([
+            for (final target in targets)
+              for (final name in ['libfjs.a', 'libfjs.dylib'])
+                {
+                  'name': '${target}_$name',
+                  'length': utf8.encode('$name:$target').length,
+                  'sha256':
+                      sha256.convert(utf8.encode('$name:$target')).toString(),
+                  'path': 'targets/$target/${target}_$name',
+                },
+          ]));
+      for (final target in targets) {
+        for (final name in ['libfjs.a', 'libfjs.dylib']) {
+          expect(
+            File(path.join(output, 'targets', target, '${target}_$name'))
+                .readAsStringSync(),
+            '$name:$target',
+          );
+        }
+      }
+    });
+  }
+
   test('local generation rejects duplicate, unknown, and unpinned targets',
       () async {
     _writeCrate(workspace);
 
-    Future<void> rejects(List<String> targets, String suffix) async {
+    Future<void> rejects(List<String> targets, String suffix,
+        {bool buildComposites = true}) async {
       final generator = LocalPrecompiledGeneration(
         manifestDir: workspace.path,
         outputDir: path.join(temp.path, 'invalid-$suffix'),
         tempDir: path.join(temp.path, 'invalid-build-$suffix'),
         targetTriples: targets,
+        buildComposites: buildComposites,
         targetBuilder: (_, __, ___) => throw StateError('must not build'),
         currentHost: CompositeHost.macos,
       );
@@ -277,7 +371,16 @@ void main() {
     );
     await rejects(const ['invented-target'], 'unknown');
     await rejects(const ['x86_64-apple-ios'], 'unpinned');
-    await rejects(const ['aarch64-apple-ios'], 'incomplete-composite');
+    await rejects(const ['aarch64-apple-darwin'], 'incomplete-composite');
+    await rejects(
+      const ['aarch64-apple-darwin', 'aarch64-apple-darwin'],
+      'duplicate-without-composites',
+      buildComposites: false,
+    );
+    await rejects(const ['invented-target'], 'unknown-without-composites',
+        buildComposites: false);
+    await rejects(const ['x86_64-apple-ios'], 'unpinned-without-composites',
+        buildComposites: false);
   });
 }
 

@@ -4,6 +4,14 @@ set -eu
 TARGET_ROOT="${CARGOKIT_TARGET_OUTPUT_ROOT:?CARGOKIT_TARGET_OUTPUT_ROOT is required}"
 OUTPUT_ROOT="${CARGOKIT_OUTPUT_ROOT:?CARGOKIT_OUTPUT_ROOT is required}"
 WORKSPACE_ROOT="${CARGOKIT_WORKSPACE_ROOT:?CARGOKIT_WORKSPACE_ROOT is required}"
+MACOS_ARCH=""
+if [ "$#" -ne 0 ]; then
+  [ "$#" -eq 2 ] && [ "$1" = --macos-arch ] || exit 2
+  case "$2" in
+    arm64|x86_64) MACOS_ARCH="$2" ;;
+    *) echo 'expected --macos-arch arm64|x86_64' >&2; exit 2 ;;
+  esac
+fi
 
 IOS_MINIMUM=12.0
 MACOS_MINIMUM=10.14
@@ -23,11 +31,18 @@ retained_dylib() {
   printf '%s\n' "$dylib"
 }
 
-IOS_DEVICE_DYLIB="$(retained_dylib aarch64-apple-ios)"
-IOS_SIM_ARM_DYLIB="$(retained_dylib aarch64-apple-ios-sim)"
-IOS_SIM_X64_DYLIB="$(retained_dylib x86_64-apple-ios)"
-MACOS_ARM_DYLIB="$(retained_dylib aarch64-apple-darwin)"
-MACOS_X64_DYLIB="$(retained_dylib x86_64-apple-darwin)"
+if [ -z "$MACOS_ARCH" ]; then
+  IOS_DEVICE_DYLIB="$(retained_dylib aarch64-apple-ios)"
+  IOS_SIM_ARM_DYLIB="$(retained_dylib aarch64-apple-ios-sim)"
+  IOS_SIM_X64_DYLIB="$(retained_dylib x86_64-apple-ios)"
+  MACOS_ARM_DYLIB="$(retained_dylib aarch64-apple-darwin)"
+  MACOS_X64_DYLIB="$(retained_dylib x86_64-apple-darwin)"
+else
+  case "$MACOS_ARCH" in
+    arm64) MACOS_DYLIB="$(retained_dylib aarch64-apple-darwin)" ;;
+    x86_64) MACOS_DYLIB="$(retained_dylib x86_64-apple-darwin)" ;;
+  esac
+fi
 
 PACKAGE_VERSION="$(sed -n 's/^version:[[:space:]]*//p' "$WORKSPACE_ROOT/pubspec.yaml" | head -n 1)"
 [ -n "$PACKAGE_VERSION" ] || fail "unable to read package version from pubspec.yaml"
@@ -125,15 +140,21 @@ EOF
   fi
 }
 
-create_framework ios "$IOS_MINIMUM" shallow "$IOS_DEVICE_DYLIB"
-create_framework ios-simulator "$IOS_MINIMUM" shallow "$IOS_SIM_ARM_DYLIB" "$IOS_SIM_X64_DYLIB"
-create_framework macos "$MACOS_MINIMUM" versioned "$MACOS_ARM_DYLIB" "$MACOS_X64_DYLIB"
-
-xcodebuild -create-xcframework \
-  -framework "$FRAMEWORK_ROOT/ios/fjs.framework" \
-  -framework "$FRAMEWORK_ROOT/ios-simulator/fjs.framework" \
-  -framework "$FRAMEWORK_ROOT/macos/fjs.framework" \
-  -output "$XCFRAMEWORK"
+if [ -n "$MACOS_ARCH" ]; then
+  create_framework macos "$MACOS_MINIMUM" versioned "$MACOS_DYLIB"
+  xcodebuild -create-xcframework \
+    -framework "$FRAMEWORK_ROOT/macos/fjs.framework" \
+    -output "$XCFRAMEWORK"
+else
+  create_framework ios "$IOS_MINIMUM" shallow "$IOS_DEVICE_DYLIB"
+  create_framework ios-simulator "$IOS_MINIMUM" shallow "$IOS_SIM_ARM_DYLIB" "$IOS_SIM_X64_DYLIB"
+  create_framework macos "$MACOS_MINIMUM" versioned "$MACOS_ARM_DYLIB" "$MACOS_X64_DYLIB"
+  xcodebuild -create-xcframework \
+    -framework "$FRAMEWORK_ROOT/ios/fjs.framework" \
+    -framework "$FRAMEWORK_ROOT/ios-simulator/fjs.framework" \
+    -framework "$FRAMEWORK_ROOT/macos/fjs.framework" \
+    -output "$XCFRAMEWORK"
+fi
 
 find "$XCFRAMEWORK" ! -type l -exec touch -t 198001010000 {} +
 find "$XCFRAMEWORK" -type l -exec touch -h -t 198001010000 {} +
@@ -144,7 +165,11 @@ ARCHIVE_TEMP="$BUILD_DIR/$ARCHIVE_NAME"
   find fjs.xcframework -print | LC_ALL=C sort | zip -q -y -X "$ARCHIVE_TEMP" -@
 )
 
-"$WORKSPACE_ROOT/tool/check_darwin_package_support.sh" --artifact "$ARCHIVE_TEMP"
+if [ -n "$MACOS_ARCH" ]; then
+  "$WORKSPACE_ROOT/tool/check_darwin_package_support.sh" --artifact "$ARCHIVE_TEMP" --macos-arch "$MACOS_ARCH"
+else
+  "$WORKSPACE_ROOT/tool/check_darwin_package_support.sh" --artifact "$ARCHIVE_TEMP"
+fi
 checksum="$(shasum -a 256 "$ARCHIVE_TEMP" | awk '{print $1}')"
 printf '%s\n' "$checksum" | grep -Eq '^[0-9a-f]{64}$' ||
   fail "unable to compute lowercase SHA-256 checksum"

@@ -45,7 +45,9 @@ if [[ -f "$CACHE_DIR/reveric-build.json" ]]; then
   fi
   echo 'Cached FJS archive failed verification; rebuilding from source.' >&2
 fi
-sh third/fjs/tool/build_fjs_xcframework.sh
+MACOS_ARCH="$(python3 tools/codemode_artifact.py arch)"
+echo "Building Codemode for macOS $MACOS_ARCH only (no iOS targets)."
+sh third/fjs/tool/build_fjs_xcframework.sh --macos-arch "$MACOS_ARCH"
 python3 tools/codemode_artifact.py record "$CODEMODE_KEY"
 python3 tools/codemode_artifact.py verify
 mkdir -p "${CACHE_DIR%/*}"

@@ -433,6 +433,7 @@ class LocalPrecompiledGeneration {
     required this.outputDir,
     required this.tempDir,
     required this.targetTriples,
+    this.buildComposites = true,
     LocalPrecompiledTargetBuilder? targetBuilder,
     this.currentHost,
     this.compositeProcessRunner,
@@ -442,6 +443,7 @@ class LocalPrecompiledGeneration {
   final String outputDir;
   final String tempDir;
   final List<String> targetTriples;
+  final bool buildComposites;
   final LocalPrecompiledTargetBuilder targetBuilder;
   final CompositeHost? currentHost;
   final CompositeProcessRunner? compositeProcessRunner;
@@ -478,12 +480,14 @@ class LocalPrecompiledGeneration {
       }
       requested.add(target);
     }
-    for (final group in precompiled.compositeGroups) {
-      final overlap = group.requiredTargets.any(seen.contains);
-      if (overlap && !group.requiredTargets.every(seen.contains)) {
-        throw ArgumentError(
-          'Requested targets are incomplete for composite group ${group.name}.',
-        );
+    if (buildComposites) {
+      for (final group in precompiled.compositeGroups) {
+        final overlap = group.requiredTargets.any(seen.contains);
+        if (overlap && !group.requiredTargets.every(seen.contains)) {
+          throw ArgumentError(
+            'Requested targets are incomplete for composite group ${group.name}.',
+          );
+        }
       }
     }
 
@@ -545,24 +549,28 @@ class LocalPrecompiledGeneration {
         }
       }
 
-      final selected = seen.toSet();
-      final compositeBuilder = CompositeArtifactBuilder(
-        workspaceRoot: workspaceRoot,
-        generationHash: generationHash,
-        targetOutputRoot: targetOutputRoot.path,
-        outputRoot: staging.path,
-        currentHost: currentHost,
-        processRunner: compositeProcessRunner,
-      );
-      for (final group in precompiled.compositeGroups) {
-        if (!compositeBuilder.supports(group, selected)) continue;
-        final result = await compositeBuilder.build(group);
-        for (final output in group.outputs) {
-          assets.add(_assetJson(
-            name: output,
-            relativePath: path.posix.join('composites', group.name, output),
-            file: File(result.outputs[output]!),
-          ));
+      if (buildComposites) {
+        final selected = seen.toSet();
+        final compositeBuilder = CompositeArtifactBuilder(
+          workspaceRoot: workspaceRoot,
+          generationHash: generationHash,
+          targetOutputRoot: targetOutputRoot.path,
+          outputRoot: staging.path,
+          currentHost: currentHost,
+          processRunner: compositeProcessRunner,
+        );
+        for (final group in precompiled.compositeGroups) {
+          if (!compositeBuilder.supports(group, selected)) {
+            continue;
+          }
+          final result = await compositeBuilder.build(group);
+          for (final output in group.outputs) {
+            assets.add(_assetJson(
+              name: output,
+              relativePath: path.posix.join('composites', group.name, output),
+              file: File(result.outputs[output]!),
+            ));
+          }
         }
       }
 
