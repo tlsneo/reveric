@@ -11,7 +11,6 @@
 
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -80,11 +79,9 @@ void main() {
       testWidgets(
         'image generation follows avatar actions on $platform at width $width',
         (tester) async {
-          debugDefaultTargetPlatformOverride = platform;
           tester.view.physicalSize = const Size(1100, 800);
           tester.view.devicePixelRatio = 1;
           addTearDown(() {
-            debugDefaultTargetPlatformOverride = null;
             tester.view.resetPhysicalSize();
             tester.view.resetDevicePixelRatio();
           });
@@ -101,6 +98,7 @@ void main() {
                   workingOverlayServiceProvider(
                     _databasePath,
                   ).overrideWithValue(overlayService),
+                  appSettingsDatabaseProvider.overrideWithValue(appDatabase),
                   isImageGenerationConfiguredProvider.overrideWithValue(false),
                   editorFontFamilyProvider.overrideWithValue('Georgia'),
                   editorFontSizeProvider.overrideWithValue(16),
@@ -153,6 +151,7 @@ void main() {
           await tester.pumpWidget(const SizedBox.shrink());
           await tester.pumpAndSettle();
         },
+        variant: TargetPlatformVariant({platform}),
       );
     }
   }
@@ -178,6 +177,7 @@ void main() {
             workingOverlayServiceProvider(
               _databasePath,
             ).overrideWithValue(overlayService),
+            appSettingsDatabaseProvider.overrideWithValue(appDatabase),
             isImageGenerationConfiguredProvider.overrideWithValue(false),
             editorFontFamilyProvider.overrideWithValue('Georgia'),
             editorFontSizeProvider.overrideWithValue(16),

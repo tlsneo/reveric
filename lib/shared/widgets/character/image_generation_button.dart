@@ -105,8 +105,6 @@ class CharacterImageGenerationButton extends ConsumerWidget {
                                 .workspaceCharacterImageAppearanceRequired,
                           CharacterImageFailure.missing_model =>
                             LocaleKeys.workspaceCharacterImageModelsRequired,
-                          CharacterImageFailure.unsupported_model =>
-                            LocaleKeys.workspaceCharacterImageModelUnsupported,
                           CharacterImageFailure.missing_avatar =>
                             LocaleKeys.workspaceCharacterImageAvatarMissing,
                           CharacterImageFailure.empty_prompt =>

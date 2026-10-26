@@ -31,7 +31,6 @@ enum CharacterImageStage { preparing, generating, saving }
 enum CharacterImageFailure {
   empty_appearance,
   missing_model,
-  unsupported_model,
   missing_avatar,
   empty_prompt,
   character_unavailable,
@@ -75,7 +74,9 @@ class CharacterImageOrchestrator {
     if (library == null) {
       throw StateError('Character image generation requires the image library');
     }
-    final character = await content.getCharacterProfileById(request.characterId);
+    final character = await content.getCharacterProfileById(
+      request.characterId,
+    );
     if (character == null) {
       throw const CharacterImageException(
         CharacterImageFailure.character_unavailable,
@@ -85,27 +86,15 @@ class CharacterImageOrchestrator {
     final avatarId = character.avatarAssetId;
     final hasAvatar = avatarId != null && avatarId.isNotEmpty;
     final capabilities = request.capabilities;
-    final resolution = capabilities.resolutions.contains('2K')
-        ? '2K'
-        : capabilities.resolutions.first;
+    const resolution = '2K';
     const ratio = '16:9';
-    try {
-      capabilities.validate(
-        prompt: appearance,
-        ratio: ratio,
-        resolution: resolution,
-        references: hasAvatar ? 1 : 0,
-      );
-    } on FormatException {
-      throw const CharacterImageException(
-        CharacterImageFailure.unsupported_model,
-      );
-    }
 
     // 在整理提示词前冻结头像字节，避免生成期间更换或移除头像改变本次输入。
     String? reference;
     if (hasAvatar) {
-      final path = RevericPaths.resolveStored(await library.assetPath(avatarId));
+      final path = RevericPaths.resolveStored(
+        await library.assetPath(avatarId),
+      );
       if (path == null || !await File(path).exists()) {
         throw const CharacterImageException(
           CharacterImageFailure.missing_avatar,
@@ -122,18 +111,15 @@ class CharacterImageOrchestrator {
     }
 
     onStage(CharacterImageStage.preparing);
-    final prompt = (await text.chatCompletionDetached(
-      [
-        AiMessage.user(
-          id: 'character_image_prompt',
-          content: AiPromptService.fromInitializedTemplates().task.characterImage(
-            appearance: appearance,
-            hasAvatar: hasAvatar,
-          ),
+    final prompt = (await text.chatCompletionDetached([
+      AiMessage.user(
+        id: 'character_image_prompt',
+        content: AiPromptService.fromInitializedTemplates().task.characterImage(
+          appearance: appearance,
+          hasAvatar: hasAvatar,
         ),
-      ],
-      timeout: const Duration(minutes: 2),
-    )).trim();
+      ),
+    ], timeout: const Duration(minutes: 2))).trim();
     if (prompt.isEmpty) {
       throw const CharacterImageException(CharacterImageFailure.empty_prompt);
     }
@@ -144,7 +130,7 @@ class CharacterImageOrchestrator {
     }
 
     onStage(CharacterImageStage.generating);
-    final size = capabilities.size(ratio, resolution);
+    const size = '2048x1152';
     final result = reference == null
         ? await image.generateImage(
             prompt,

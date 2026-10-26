@@ -1058,7 +1058,7 @@ class _CharacterImageBand extends StatelessWidget {
   Widget build(BuildContext context) {
     final avatarHeight = imageGenerationButton == null
         ? 164.0
-        : 164.0 + RevericSizes.buttonHeightSm + RevericSpacing.xs;
+        : 164.0 + kMinInteractiveDimension + RevericSpacing.xs;
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 620) {
