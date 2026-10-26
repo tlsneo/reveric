@@ -33,82 +33,93 @@ void main() {
   });
   setUp(() => rootBundle.clear());
 
-  testWidgets('uses current draft, prevents duplicate submit and returns photos', (
-    tester,
-  ) async {
-    final appearance = TextEditingController(text: 'Saved look');
-    addTearDown(appearance.dispose);
-    final generation = _Generation(_target);
-    List<SubjectPhoto>? received;
-    await tester.pumpWidget(_wrap(
-      generation,
-      CharacterImageGenerationButton(
-        databasePath: _target.databasePath,
-        characterId: _target.characterId,
-        appearanceController: appearance,
-        onGenerated: (photos) => received = photos,
-      ),
-    ));
-    await tester.pumpAndSettle();
+  testWidgets(
+    'uses current draft, prevents duplicate submit and returns photos',
+    (tester) async {
+      final appearance = TextEditingController(text: 'Saved look');
+      addTearDown(appearance.dispose);
+      final generation = _Generation(_target);
+      List<SubjectPhoto>? received;
+      await tester.pumpWidget(
+        _wrap(
+          generation,
+          CharacterImageGenerationButton(
+            databasePath: _target.databasePath,
+            characterId: _target.characterId,
+            appearanceController: appearance,
+            onGenerated: (photos) => received = photos,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    appearance.text = 'Unsaved current hairstyle and outfit';
-    await tester.tap(find.byType(RevericButton));
-    await tester.pump();
-    expect(generation.appearances, [appearance.text]);
-    final busy = tester.widget<RevericButton>(find.byType(RevericButton));
-    expect(busy.loading, isTrue);
-    expect(busy.onPressed, isNull);
-    await tester.tap(find.byType(RevericButton));
-    expect(generation.appearances, hasLength(1));
+      expect(find.text('Generate Four Views'), findsOneWidget);
+      appearance.text = 'Unsaved current hairstyle and outfit';
+      await tester.tap(find.byType(RevericButton));
+      await tester.pump();
+      expect(generation.appearances, [appearance.text]);
+      final busy = tester.widget<RevericButton>(find.byType(RevericButton));
+      expect(busy.loading, isTrue);
+      expect(busy.onPressed, isNull);
+      await tester.tap(find.byType(RevericButton));
+      expect(generation.appearances, hasLength(1));
 
-    const photos = [SubjectPhoto(assetId: 'generated')];
-    generation.pending.complete(photos);
-    await tester.pumpAndSettle();
-    expect(received, photos);
-    expect(appearance.text, 'Unsaved current hairstyle and outfit');
-    expect(find.textContaining('Image added to'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pumpAndSettle();
-  });
+      const photos = [SubjectPhoto(assetId: 'generated')];
+      generation.pending.complete(photos);
+      await tester.pumpAndSettle();
+      expect(received, photos);
+      expect(appearance.text, 'Unsaved current hairstyle and outfit');
+      expect(find.textContaining('Image added to'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    },
+    variant: TargetPlatformVariant({
+      TargetPlatform.android,
+      TargetPlatform.macOS,
+    }),
+  );
 
-  testWidgets('leaving the character does not cancel or call the old UI callback', (
-    tester,
-  ) async {
-    final appearance = TextEditingController(text: 'Current appearance');
-    final visible = ValueNotifier(true);
-    addTearDown(appearance.dispose);
-    addTearDown(visible.dispose);
-    final generation = _Generation(_target);
-    var callbacks = 0;
-    await tester.pumpWidget(_wrap(
-      generation,
-      ValueListenableBuilder<bool>(
-        valueListenable: visible,
-        builder: (context, show, _) => show
-            ? CharacterImageGenerationButton(
-                databasePath: _target.databasePath,
-                characterId: _target.characterId,
-                appearanceController: appearance,
-                onGenerated: (_) => callbacks++,
-              )
-            : const SizedBox.shrink(),
-      ),
-    ));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byType(RevericButton));
-    await tester.pump();
-    visible.value = false;
-    await tester.pump();
-    generation.pending.complete(const [SubjectPhoto(assetId: 'generated')]);
-    await tester.pumpAndSettle();
-    expect(generation.finished, isTrue);
-    expect(callbacks, 0);
-    expect(find.byType(SnackBar), findsNothing);
-    expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pumpAndSettle();
-  });
+  testWidgets(
+    'leaving the character does not cancel or call the old UI callback',
+    (tester) async {
+      final appearance = TextEditingController(text: 'Current appearance');
+      final visible = ValueNotifier(true);
+      addTearDown(appearance.dispose);
+      addTearDown(visible.dispose);
+      final generation = _Generation(_target);
+      var callbacks = 0;
+      await tester.pumpWidget(
+        _wrap(
+          generation,
+          ValueListenableBuilder<bool>(
+            valueListenable: visible,
+            builder: (context, show, _) => show
+                ? CharacterImageGenerationButton(
+                    databasePath: _target.databasePath,
+                    characterId: _target.characterId,
+                    appearanceController: appearance,
+                    onGenerated: (_) => callbacks++,
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(RevericButton));
+      await tester.pump();
+      visible.value = false;
+      await tester.pump();
+      generation.pending.complete(const [SubjectPhoto(assetId: 'generated')]);
+      await tester.pumpAndSettle();
+      expect(generation.finished, isTrue);
+      expect(callbacks, 0);
+      expect(find.byType(SnackBar), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    },
+  );
 }
 
 class _Generation extends CharacterImageController {

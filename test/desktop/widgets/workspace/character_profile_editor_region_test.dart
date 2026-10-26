@@ -5,6 +5,8 @@
 //   lib/shared/providers/novel_providers.dart
 //   lib/shared/localization/locale_keys.dart
 //   assets/translations/zh-CN/workspace.json
+//   assets/translations/zh-CN/ai.json
+//   assets/translations/zh-CN/editor.json
 // 遵循的 Rules:
 //   .agents/rules/testing.md
 //   .agents/rules/text-input-ime.md
@@ -17,6 +19,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:reveric/desktop/widgets/workspace/character_profile_editor.dart';
 import 'package:reveric/desktop/widgets/workspace/character_profile_editor_region.dart';
+import 'package:reveric/shared/components/reveric_button.dart';
 import 'package:reveric/shared/database/app_database.dart';
 import 'package:reveric/shared/models/content_kind.dart';
 import 'package:reveric/shared/database/novel_content_database.dart';
@@ -27,6 +30,8 @@ import 'package:reveric/shared/models/novel_workspace.dart';
 import 'package:reveric/shared/providers/ai_providers.dart';
 import 'package:reveric/shared/providers/novel_providers.dart';
 import 'package:reveric/shared/providers/settings_providers.dart';
+import 'package:reveric/shared/services/ai/prompt_template.dart';
+import 'package:reveric/shared/services/ai/prompts/ai_prompt_service.dart';
 import 'package:reveric/shared/services/novel_actions.dart';
 import 'package:reveric/shared/services/novel_content.dart';
 import 'package:reveric/shared/services/working_overlay.dart';
@@ -53,6 +58,7 @@ void main() {
 
   setUp(() async {
     rootBundle.clear();
+    await PromptTemplateService.loadAll();
     contentDatabase = NovelContentDatabase.forTest(NativeDatabase.memory());
     appDatabase = AppDatabase.forTest(NativeDatabase.memory());
     contentService = NovelContentService(contentDatabase);
@@ -85,6 +91,8 @@ void main() {
             tester.view.resetPhysicalSize();
             tester.view.resetDevicePixelRatio();
           });
+          String? receivedPrompt;
+          String? receivedCharacterId;
           await tester.pumpWidget(
             _wrap(
               ProviderScope(
@@ -99,7 +107,7 @@ void main() {
                     _databasePath,
                   ).overrideWithValue(overlayService),
                   appSettingsDatabaseProvider.overrideWithValue(appDatabase),
-                  isImageGenerationConfiguredProvider.overrideWithValue(false),
+                  isImageGenerationConfiguredProvider.overrideWithValue(true),
                   editorFontFamilyProvider.overrideWithValue('Georgia'),
                   editorFontSizeProvider.overrideWithValue(16),
                   editorLetterSpacingProvider.overrideWithValue(0),
@@ -117,7 +125,10 @@ void main() {
                   host: CharacterProfileEditorRegionHost(
                     onCreateCharacter: () {},
                     onSavingChanged: (_) {},
-                    onGenerateAvatar: (_, _) async {},
+                    onGenerateAvatar: (prompt, characterId) async {
+                      receivedPrompt = prompt;
+                      receivedCharacterId = characterId;
+                    },
                     onGeneratePhoto: (_, _) async {},
                   ),
                 ),
@@ -128,7 +139,8 @@ void main() {
           await tester.pumpAndSettle();
           final generation = find.byType(CharacterImageGenerationButton);
           expect(generation, findsOneWidget);
-          final avatar = find.widgetWithText(OutlinedButton, '生成头像');
+          final avatar = find.widgetWithText(OutlinedButton, '生成大头照');
+          expect(find.text('一键生成四视图'), findsOneWidget);
           final actions = find
               .ancestor(of: avatar, matching: find.byType(Column))
               .first;
@@ -138,7 +150,7 @@ void main() {
                 .children
                 .whereType<CharacterImageGenerationButton>(),
             hasLength(1),
-            reason: '一键生图必须是头像操作列的直接子项，不能留在外观文字下方',
+            reason: '一键生成四视图必须是头像操作列的直接子项，不能留在外观文字下方',
           );
           await tester.ensureVisible(generation);
           await tester.pumpAndSettle();
@@ -147,6 +159,26 @@ void main() {
           expect(generationRect.top, greaterThan(avatarRect.bottom));
           expect(generationRect.left, closeTo(avatarRect.left, 0.1));
           expect(generationRect.width, closeTo(avatarRect.width, 0.1));
+
+          await Scrollable.ensureVisible(
+            tester.element(avatar),
+            alignment: 0.5,
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(avatar);
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('电影感'));
+          await tester.pumpAndSettle();
+          await tester.tap(find.widgetWithText(RevericButton, '生成大头照'));
+          await tester.pumpAndSettle();
+          expect(receivedCharacterId, characterAId);
+          expect(
+            receivedPrompt,
+            AiPromptService.fromInitializedTemplates().task.characterAvatar(
+              characterId: characterAId,
+              styleRequest: '电影感',
+            ),
+          );
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox.shrink());
           await tester.pumpAndSettle();

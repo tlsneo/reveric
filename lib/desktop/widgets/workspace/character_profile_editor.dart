@@ -36,6 +36,7 @@ import '../../../shared/localization/locale_keys.dart';
 import '../../../shared/entity_graph/labels.dart';
 import '../../../shared/providers/novel_providers.dart';
 import '../../../shared/services/ai/chat.dart';
+import '../../../shared/services/ai/prompts/ai_prompt_service.dart';
 import '../../../shared/models/content_kind.dart';
 import '../../../shared/models/cover_style.dart';
 import '../../../shared/models/character_profile.dart';
@@ -710,8 +711,11 @@ class CharacterProfileEditor extends HookConsumerWidget {
           session.selectedItemId == null) {
         return;
       }
-      final prompt =
-          '请为角色「${session.nameController.text}」生成头像。\n\n$stylePrompt';
+      final prompt = AiPromptService.fromInitializedTemplates().task
+          .characterAvatar(
+            characterId: session.selectedItemId!,
+            styleRequest: stylePrompt,
+          );
       session.onGenerateAvatar(prompt, session.selectedItemId!);
     });
   }

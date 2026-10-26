@@ -3035,8 +3035,6 @@ class NovelEditorPage extends HookConsumerWidget {
       }
     }
 
-    String avatarPrompt(String prompt) => 'Avatar portrait: $prompt';
-
     String photoPrompt(String prompt) => 'Character photo: $prompt';
 
     String characterLabel(String characterId) {
@@ -3051,7 +3049,7 @@ class NovelEditorPage extends HookConsumerWidget {
       String prompt,
       String characterId,
     ) async {
-      final text = avatarPrompt(prompt);
+      final text = prompt;
       final handoffId = 'char_avatar_${DateTime.now().microsecondsSinceEpoch}';
       _log.aiTrace('avatar handoff created', {
         'handoffId': handoffId,

@@ -162,6 +162,13 @@ abstract final class PromptRegistry {
 
     // Tasks.
     PromptDefinition(
+      id: PromptId.taskCharacterAvatar,
+      kind: PromptKind.task,
+      owner: 'character',
+      templatePath: 'assets/prompts/task/character_avatar',
+      variables: ['character_id', 'style_request'],
+    ),
+    PromptDefinition(
       id: PromptId.taskCharacterImage,
       kind: PromptKind.task,
       owner: 'character',
