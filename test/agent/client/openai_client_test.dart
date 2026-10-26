@@ -5,12 +5,14 @@
 
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 import 'package:reveric/shared/agent/agent_config.dart';
 import 'package:reveric/shared/agent/agent_event.dart';
+import 'package:reveric/shared/agent/agent_tool_dispatcher.dart' show ToolDef;
 import 'package:reveric/shared/agent/client.dart';
 import 'package:reveric/shared/agent/client/openai_client.dart';
 import 'package:reveric/shared/agent/client/provider_history_preflight.dart';
@@ -474,6 +476,87 @@ void main() {
       expect(seenHeaders!.containsKey('X-Custom-Header'), isFalse);
     });
   });
+
+  test(
+    'stream logs match wire tool names without exposing private content',
+    () async {
+      const tools = [
+        ToolDef(
+          name: 'Read',
+          description: 'private-tool-description',
+          inputSchema: {'type': 'object'},
+        ),
+        ToolDef(
+          name: 'Run',
+          description: 'private-tool-description',
+          inputSchema: {'type': 'object'},
+        ),
+      ];
+      final lines = <String>[];
+      final previousDebugPrint = debugPrint;
+      debugPrint = (String? message, {int? wrapWidth}) {
+        if (message != null) {
+          lines.add(message);
+        }
+      };
+      try {
+        for (final configuredTools in <List<ToolDef>?>[null, const [], tools]) {
+          lines.clear();
+          List<String>? wireToolNames;
+          final client = OpenAiClient(
+            apiKey: 'secret-api-key',
+            baseUrl: 'https://example.invalid',
+            model: 'gpt-4o-mini',
+            streamClientFactory: () => MockClient((request) async {
+              final body = jsonDecode(request.body) as Map<String, dynamic>;
+              wireToolNames = [
+                for (final tool in body['tools'] as List? ?? const [])
+                  tool['function']['name'] as String,
+              ];
+              return http.Response(
+                'data: ${jsonEncode({
+                  'choices': [
+                    {
+                      'index': 0,
+                      'delta': {'content': 'ok'},
+                      'finish_reason': 'stop',
+                    },
+                  ],
+                })}\n\ndata: [DONE]\n\n',
+                200,
+                headers: {'content-type': 'text/event-stream'},
+              );
+            }),
+          );
+          final events = await client
+              .chatStream(
+                messages: [
+                  AgentMessage.user(
+                    id: 'u1',
+                    content: 'private-message-content',
+                  ),
+                ],
+                tools: configuredTools,
+              )
+              .toList();
+          expect(events.whereType<TextDelta>().single.text, 'ok');
+          expect(
+            wireToolNames,
+            configuredTools?.map((tool) => tool.name).toList() ?? [],
+          );
+          final start = lines.singleWhere(
+            (line) => line.contains('chat completions stream start'),
+          );
+          expect(start, contains('toolNames=${jsonEncode(wireToolNames)}'));
+          expect(lines.join('\n'), isNot(contains('secret-api-key')));
+          expect(lines.join('\n'), isNot(contains('private-message-content')));
+          expect(lines.join('\n'), isNot(contains('private-tool-description')));
+        }
+      } finally {
+        debugPrint = previousDebugPrint;
+      }
+    },
+  );
 
   group('OpenAiClient.chatStream content ordering', () {
     for (final reasoningField in ['reasoning_content', 'reasoning']) {

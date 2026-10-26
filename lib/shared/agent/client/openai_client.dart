@@ -481,6 +481,7 @@ class OpenAiClient implements ProviderClient {
       _log.info(
         'chat completions stream start id=$streamId model=${model ?? 'none'} '
         'messages=${messages.length} tools=${tools?.length ?? 0} '
+        'toolNames=${jsonEncode(tools?.map((tool) => tool.name).toList() ?? [])} '
         'temperature=${opts.temperature} maxTokens=${opts.maxTokens} '
         'reasoningEffort=${opts.reasoningEffort ?? 'none'} '
         'useThinkingField=$useThinkingField',
