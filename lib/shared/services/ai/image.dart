@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 
+import '../../logger/app_logger.dart';
 import '../../models/ai_provider.dart';
 import '../../utils/storage_paths.dart';
 import '../../models/image/channels.dart';
@@ -23,6 +24,8 @@ import 'image/gemini.dart';
 import 'image/openai.dart';
 import 'image/openrouter.dart';
 import 'image/qwen.dart';
+
+final _imageFlowLog = AppLogger.forModule('ImageGeneration');
 
 /// 出图失败的分类。封面工作台按它决定那一格显示哪句「下一步怎么办」，
 /// 所以分类逻辑只能有这一份，不要在调用方重写关键字匹配。
@@ -213,6 +216,21 @@ class AiImageGenerationService {
     final client =
         _client() ??
         (throw AiImageGenerationException('${_config.displayName} 当前不支持生图。'));
+    _imageFlowLog.aiTrace(
+      'image.generate providerId=${_config.id}',
+      {
+        'model': model ?? _model,
+        'protocol': _config.typeConfig.imageProtocol?.name,
+        'baseUrl': _config.effectiveBaseUrl,
+        'prompt': prompt,
+        'size': size,
+        'quality': quality,
+        'aspectRatio': aspectRatio,
+        'resolution': resolution,
+        'referenceCount': 0,
+      },
+      secrets: [_config.effectiveApiKey],
+    );
     return client.generate(
       ImageGenerationRequest(
         prompt: prompt,
@@ -282,6 +300,22 @@ class AiImageGenerationService {
     if (client == null || !client.supportsEdit) {
       throw AiImageGenerationException('${_config.displayName} 当前不支持图片编辑。');
     }
+    _imageFlowLog.aiTrace(
+      'image.edit providerId=${_config.id}',
+      {
+        'model': model ?? _model,
+        'protocol': _config.typeConfig.imageProtocol?.name,
+        'baseUrl': _config.effectiveBaseUrl,
+        'prompt': prompt,
+        'size': size,
+        'quality': quality,
+        'aspectRatio': aspectRatio,
+        'resolution': resolution,
+        'referenceCount': imageData.length,
+        'referenceLengths': imageData.map((image) => image.length).toList(),
+      },
+      secrets: [_config.effectiveApiKey],
+    );
     return client.generate(
       ImageGenerationRequest(
         prompt: prompt,
@@ -299,8 +333,24 @@ class AiImageGenerationService {
   Future<AiImageGenerationResult> _run(
     Future<AiImageGenerationResult> Function() action,
   ) async {
+    final clock = Stopwatch()..start();
     try {
-      return await action();
+      final result = await action();
+      _imageFlowLog.aiTrace(
+        'image.result providerId=${_config.id}',
+        {
+          'elapsedMs': clock.elapsedMilliseconds,
+          'imageUrl': result.imageUrl,
+          'localFilePath': result.localFilePath,
+          'imageBase64Length': result.imageBase64?.length,
+          'revisedPrompt': result.revisedPrompt,
+          'mimeSubtype': result.mimeSubtype,
+          'hasImage': result.hasImage,
+          'avatarBound': false,
+        },
+        secrets: [_config.effectiveApiKey],
+      );
+      return result;
     } on AiImageGenerationException catch (error, stackTrace) {
       _logGenerationError(error, stackTrace);
       rethrow;
@@ -327,6 +377,19 @@ class AiImageGenerationService {
   }
 
   void _logGenerationError(Object error, StackTrace stackTrace) {
+    _imageFlowLog.aiTrace(
+      'image.error providerId=${_config.id}',
+      {
+        'model': _model,
+        'errorType': '${error.runtimeType}',
+        'error': '$error',
+        'detail': error is AiImageGenerationException
+            ? error.debugMessage
+            : null,
+        'stack': '$stackTrace',
+      },
+      secrets: [_config.effectiveApiKey],
+    );
     writeImageLog(
       '[AiImageGeneration] provider=${_config.id} model=$_model '
       'baseUrl=${_config.effectiveBaseUrl} error=$error',

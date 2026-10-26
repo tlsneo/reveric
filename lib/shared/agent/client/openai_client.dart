@@ -100,18 +100,18 @@ class OpenAiClient implements ProviderClient {
          apiKey,
          baseUrl: baseUrl,
          defaultHeaders: defaultHeaders,
-         httpClient: traceHeadersProvider != null
-             ? TraceHeadersHttpClient(
-                 inner: httpClient ?? http.Client(),
-                 headersProvider: traceHeadersProvider,
-               )
-             : httpClient,
-         streamClientFactory: traceHeadersProvider != null
-             ? () => TraceHeadersHttpClient(
-                 inner: streamClientFactory?.call() ?? http.Client(),
-                 headersProvider: traceHeadersProvider,
-               )
-             : streamClientFactory,
+         httpClient: TraceHeadersHttpClient(
+           inner: httpClient ?? http.Client(),
+           headersProvider: traceHeadersProvider ?? () => const {},
+           logBodies: true,
+           diagnosticSecrets: [apiKey],
+         ),
+         streamClientFactory: () => TraceHeadersHttpClient(
+           inner: streamClientFactory?.call() ?? http.Client(),
+           headersProvider: traceHeadersProvider ?? () => const {},
+           logBodies: true,
+           diagnosticSecrets: [apiKey],
+         ),
        );
 
   final openai.OpenAIClient _client;

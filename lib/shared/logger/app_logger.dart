@@ -1,6 +1,9 @@
 // 职责: 全局日志入口 — 静态便捷方法与模块作用域日志，统一路由到 LogManager 文件输出
 // 关联文件:
 //   lib/shared/logger/log_manager.dart
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 
@@ -14,6 +17,22 @@ import 'log_manager.dart';
 ///
 /// 所有日志在 LogManager 初始化后写入文件；初始化前 fallback 到 debugPrint。
 class AppLogger {
+  static final _aiTraceContextKey = Object();
+
+  /// Carries local diagnostic IDs through async image callbacks, not HTTP headers.
+  static T withAiTraceContext<T>(
+    Map<String, Object?> context,
+    T Function() action,
+  ) => runZoned(
+    action,
+    zoneValues: {
+      _aiTraceContextKey: {
+        ...?Zone.current[_aiTraceContextKey] as Map<String, Object?>?,
+        ...context,
+      },
+    },
+  );
+
   // ---------------------------------------------------------------------------
   // 静态便捷 API（无 tag，适用于一次性日志）
   // ---------------------------------------------------------------------------
@@ -105,4 +124,109 @@ class ModuleLogger {
   void error(String message, {Object? error, StackTrace? stackTrace}) =>
       AppLogger.error('[$_tag] $message', error: error, stackTrace: stackTrace);
   void checkpoint(String message) => AppLogger.checkpoint('[$_tag] $message');
+
+  /// Full local AI diagnostics are on in Debug builds, never in Release.
+  bool get aiTraceEnabled => kDebugMode;
+
+  /// Keep text complete; split long records so terminal line limits do not hide
+  /// prompts/results. This writes locally only, not to anonymous telemetry.
+  void aiTrace(
+    String stage,
+    Object? payload, {
+    List<String> secrets = const [],
+  }) {
+    if (!aiTraceEnabled) {
+      return;
+    }
+    try {
+      final context = Zone.current[AppLogger._aiTraceContextKey];
+      final contextLabel = context == null
+          ? ''
+          : ' context=${jsonEncode(context)}';
+      var text = jsonEncode(_aiTraceValue(payload), toEncodable: (v) => '$v');
+      for (final secret in secrets) {
+        if (secret.isNotEmpty) {
+          final encoded = jsonEncode(secret);
+          text = text.replaceAll(
+            encoded.substring(1, encoded.length - 1),
+            '[REDACTED]',
+          );
+        }
+      }
+      const chunkSize = 2000;
+      final chunks = <String>[];
+      for (var offset = 0; offset < text.length;) {
+        var end = offset + chunkSize < text.length
+            ? offset + chunkSize
+            : text.length;
+        if (end < text.length &&
+            text.codeUnitAt(end - 1) >= 0xd800 &&
+            text.codeUnitAt(end - 1) <= 0xdbff) {
+          end -= 1;
+        }
+        chunks.add(text.substring(offset, end));
+        offset = end;
+      }
+      for (var index = 0; index < chunks.length; index++) {
+        info(
+          '[AIFLOW] $stage$contextLabel part=${index + 1}/${chunks.length} ${chunks[index]}',
+        );
+      }
+    } catch (error) {
+      // Diagnostic serialization must not change the request/tool outcome.
+      warning(
+        '[AIFLOW] $stage diagnostic_serialization_failed type=${error.runtimeType}',
+      );
+    }
+  }
+}
+
+final _credentialKey = RegExp(
+  r'^(authorization|proxyauthorization|apikey|password|proxypassword|accesstoken|refreshtoken|idtoken|token|secret|clientsecret|cookie|setcookie)$',
+);
+final _dataUri = RegExp(r'data:[^\s"<>]*?;base64,[A-Za-z0-9+/=_-]+');
+final _bearer = RegExp(r'Bearer\s+[A-Za-z0-9._~+/=-]+', caseSensitive: false);
+final _credentialText = RegExp(
+  r'''((?:api[_-]?key|access[_-]?token|refresh[_-]?token|password|signature|x-amz-signature)["']?\s*[:=]\s*["']?)[^\s"'&,;}]+''',
+  caseSensitive: false,
+);
+
+Object? _aiTraceValue(Object? value) {
+  if (value is Uint8List) {
+    return '[binary bytes=${value.length}]';
+  }
+  if (value is Map) {
+    return {
+      for (final entry in value.entries)
+        '${entry.key}':
+            _credentialKey.hasMatch(
+              '${entry.key}'.toLowerCase().replaceAll(RegExp('[^a-z0-9]'), ''),
+            )
+            ? '[REDACTED]'
+            : const {'b64_json', 'imageBase64', 'base64'}.contains(entry.key) ||
+                  (entry.key == 'data' &&
+                      (value.containsKey('mimeType') ||
+                          value['type'] == 'base64'))
+            ? '[binary chars=${entry.value is String ? (entry.value as String).length : 0}]'
+            : _aiTraceValue(entry.value),
+    };
+  }
+  if (value is Iterable) {
+    return value.map(_aiTraceValue).toList();
+  }
+  if (value is String) {
+    final trimmed = value.trimLeft();
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      try {
+        return _aiTraceValue(jsonDecode(value));
+      } on FormatException {
+        // Tool text and partial SSE are not necessarily complete JSON.
+      }
+    }
+    return value
+        .replaceAllMapped(_dataUri, (m) => '[data URI chars=${m[0]!.length}]')
+        .replaceAll(_bearer, 'Bearer [REDACTED]')
+        .replaceAllMapped(_credentialText, (m) => '${m[1]}[REDACTED]');
+  }
+  return value;
 }

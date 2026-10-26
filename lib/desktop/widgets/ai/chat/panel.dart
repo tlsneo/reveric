@@ -1094,6 +1094,17 @@ class AiChatPanel extends HookConsumerWidget {
               agentSlug: targetAgentSlug,
             );
         s.composerFocusNode.requestFocus();
+        _log.aiTrace('chat.handoff.ready', {
+          'handoffId': draft.id,
+          'temporarySessionId': draftSignal,
+          'agentSlug': targetAgentSlug,
+          'autoSend': draft.autoSend,
+          'content': draft.content,
+          'composerText': s.composerController.text,
+          'referenceIds': draft.references
+              .map((reference) => reference.itemId)
+              .toList(),
+        });
         _log.debug('draftSignal=$draftSignal selectedSlug=$targetAgentSlug');
         onHandoffDraftConsumedRef.value?.call(draft.id);
         if (draft.autoSend) {

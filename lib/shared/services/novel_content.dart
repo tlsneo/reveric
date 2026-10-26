@@ -1200,6 +1200,18 @@ class NovelContentService {
     String? avatarAssetId,
     List<SubjectPhoto>? photos,
   }) async {
+    if (_log.aiTraceEnabled) {
+      _log.aiTrace('character.images.write entryId=$entryId', {
+        'avatarAction': avatarAssetId == null
+            ? 'unchanged'
+            : avatarAssetId.isEmpty
+            ? 'clear'
+            : 'set',
+        'avatarAssetId': avatarAssetId,
+        'photoCount': photos?.length,
+        'caller': '${StackTrace.current}',
+      });
+    }
     _log.debug(
       'updateCharacterAvatarAndPhotos: entryId=$entryId '
       'avatar=${avatarAssetId == null

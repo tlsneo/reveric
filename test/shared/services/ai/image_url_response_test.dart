@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reveric/shared/database/app_database.dart';
@@ -165,6 +166,40 @@ void main() {
       await supportDir.delete(recursive: true);
     }
   });
+
+  test(
+    'image trace includes prompt, HTTP response and final local result',
+    () async {
+      final lines = <String>[];
+      final previous = debugPrint;
+      debugPrint = (String? message, {int? wrapWidth}) {
+        if (message != null) {
+          lines.add(message);
+        }
+      };
+      try {
+        final service = AiImageGenerationService(
+          _openAiCompatibleProvider(baseUrl),
+          model: 'gpt-image-1',
+        );
+        final result = await service.generateImage(
+          '完整头像提示词',
+          size: '1024x1024',
+        );
+        expect(result.localFilePath, isNotNull);
+        final text = lines.join('\n');
+        expect(text, contains('[AIFLOW] image.generate'));
+        expect(text, contains('完整头像提示词'));
+        expect(text, contains('image.http.request'));
+        expect(text, contains('image.http.response'));
+        expect(text, contains('image.result'));
+        expect(text, contains(result.localFilePath!));
+        expect(text, contains('"avatarBound":false'));
+      } finally {
+        debugPrint = previous;
+      }
+    },
+  );
 
   for (final model in imageModelsForProvider('agnes')) {
     test('$model generates and edits through Agnes JSON generations', () async {

@@ -31,27 +31,60 @@ mixin _AiToolManagerImageMixin on _AiToolManagerBase {
     }
     final characterId = _parseStringArgument(input['character_id']);
     final imagePath = _parseStringArgument(input['path'], trim: true);
+    final callId = _activeRunCallId;
+    _log.aiTrace('image avatar execution start', {
+      'sessionId': sessionId,
+      'callId': callId,
+      'characterId': characterId,
+      'tool': 'GenerateAvatar',
+      'args': input,
+      'mode': imagePath.isNotEmpty ? 'edit' : 'generate',
+    });
     try {
-      final result = imagePath.isNotEmpty
-          ? await _handleGenerateAvatarFromSource(prompt, imagePath: imagePath)
-          : await imageGenerationCallback!(prompt, size: _avatarImageSize);
-      return {
+      final result = await AppLogger.withAiTraceContext(
+        {'sessionId': sessionId, 'callId': callId, 'characterId': characterId},
+        () => imagePath.isNotEmpty
+            ? _handleGenerateAvatarFromSource(prompt, imagePath: imagePath)
+            : imageGenerationCallback!(prompt, size: _avatarImageSize),
+      );
+      final output = {
         'success': true,
         'local_path':
             RevericPaths.toRelative(result.localFilePath) ??
             result.localFilePath!,
         'character_id': characterId,
       };
+      _log.aiTrace('image avatar execution result', {
+        'sessionId': sessionId,
+        'callId': callId,
+        'characterId': characterId,
+        'result': output,
+        'image': {
+          'hasLocalFile': result.localFilePath != null,
+          'mimeSubtype': result.mimeSubtype,
+          'hasUrl': result.imageUrl != null,
+          'hasBase64': result.imageBase64 != null,
+        },
+      });
+      return output;
     } catch (e) {
       final errorMessage = switch (e) {
         AiImageGenerationException(:final userMessage) => userMessage,
         _ => tr(LocaleKeys.aiAvatarGenRetry),
       };
-      return {
+      final output = {
         'success': false,
         'error': errorMessage,
         'error_code': ToolErrorCode.internal.name,
       };
+      _log.aiTrace('image avatar execution error', {
+        'sessionId': sessionId,
+        'callId': callId,
+        'characterId': characterId,
+        'error': e.toString(),
+        'result': output,
+      });
+      return output;
     }
   }
 

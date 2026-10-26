@@ -5,8 +5,14 @@
 //   lib/shared/agent/client/gemini_client.dart
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+
+import '../../logger/app_logger.dart';
+
+final _wireLog = AppLogger.forModule('AiWire');
+var _wireSequence = 0;
 
 typedef TraceHeadersProvider = Map<String, String> Function();
 
@@ -54,10 +60,14 @@ String buildTraceSubSessionId({
 class TraceHeadersHttpClient extends http.BaseClient {
   final http.Client _inner;
   final TraceHeadersProvider _headersProvider;
+  final bool logBodies;
+  final List<String> diagnosticSecrets;
 
   TraceHeadersHttpClient({
     required http.Client inner,
     required TraceHeadersProvider headersProvider,
+    this.logBodies = false,
+    this.diagnosticSecrets = const [],
   }) : _inner = inner,
        _headersProvider = headersProvider;
 
@@ -67,7 +77,105 @@ class TraceHeadersHttpClient extends http.BaseClient {
     for (final entry in traceHeaders.entries) {
       request.headers[entry.key] = entry.value;
     }
-    return _inner.send(request);
+    if (!logBodies || !_wireLog.aiTraceEnabled) {
+      return _inner.send(request);
+    }
+    final wireId = ++_wireSequence;
+    final clock = Stopwatch()..start();
+    final label =
+        'wireId=$wireId sessionId=${traceHeaders['x-session-id'] ?? 'none'}';
+    void record(String phase, Object? payload) => _wireLog.aiTrace(
+      '$phase $label elapsedMs=${clock.elapsedMilliseconds}',
+      payload,
+      secrets: diagnosticSecrets,
+    );
+    record('http.request', {
+      'method': request.method,
+      'url': request.url.toString(),
+      'traceHeaders': traceHeaders,
+      'body': request is http.Request ? request.body : '<streamed request>',
+    });
+    final http.StreamedResponse response;
+    try {
+      response = await _inner.send(request);
+    } catch (error, stack) {
+      record('http.send_error', {'error': '$error', 'stack': '$stack'});
+      rethrow;
+    }
+    record('http.response', {
+      'status': response.statusCode,
+      'reason': response.reasonPhrase,
+      'headers': response.headers,
+    });
+    final contentType = response.headers['content-type'] ?? '';
+    if ((contentType.startsWith('image/') ||
+            contentType.startsWith('audio/') ||
+            contentType.startsWith('video/') ||
+            contentType.contains('octet-stream')) &&
+        response.statusCode < 400) {
+      record('http.body_omitted', {
+        'contentType': contentType,
+        'bytes': response.contentLength,
+      });
+      return response;
+    }
+    // Observe complete wire lines BEFORE SDK parsing, without consuming a second
+    // subscription, changing bytes, buffering the whole stream or delaying cancel.
+    final pending = <int>[];
+    var lineNumber = 0;
+    void flushLine() {
+      if (pending.isEmpty) {
+        return;
+      }
+      final String line;
+      try {
+        line = utf8.decode(pending);
+      } on FormatException {
+        record('http.non_utf8_body', {'bytes': pending.length});
+        pending.clear();
+        return;
+      }
+      pending.clear();
+      record(
+        'http.response_line line=${++lineNumber}',
+        line.startsWith('data:') ? line.substring(5).trimLeft() : line,
+      );
+    }
+
+    final observed = response.stream.transform<List<int>>(
+      StreamTransformer<List<int>, List<int>>.fromHandlers(
+        handleData: (bytes, sink) {
+          for (final byte in bytes) {
+            if (byte == 10) {
+              flushLine();
+            } else {
+              pending.add(byte);
+            }
+          }
+          sink.add(bytes);
+        },
+        handleError: (Object error, StackTrace stack, sink) {
+          flushLine();
+          record('http.stream_error', {'error': '$error', 'stack': '$stack'});
+          sink.addError(error, stack);
+        },
+        handleDone: (sink) {
+          flushLine();
+          record('http.eof', {'lines': lineNumber});
+          sink.close();
+        },
+      ),
+    );
+    return http.StreamedResponse(
+      observed,
+      response.statusCode,
+      contentLength: response.contentLength,
+      request: response.request,
+      headers: response.headers,
+      isRedirect: response.isRedirect,
+      persistentConnection: response.persistentConnection,
+      reasonPhrase: response.reasonPhrase,
+    );
   }
 
   @override

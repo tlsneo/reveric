@@ -478,7 +478,7 @@ void main() {
   });
 
   test(
-    'stream logs match wire tool names without exposing private content',
+    'debug trace records wire messages and tool definitions without credentials',
     () async {
       const tools = [
         ToolDef(
@@ -549,8 +549,11 @@ void main() {
           );
           expect(start, contains('toolNames=${jsonEncode(wireToolNames)}'));
           expect(lines.join('\n'), isNot(contains('secret-api-key')));
-          expect(lines.join('\n'), isNot(contains('private-message-content')));
-          expect(lines.join('\n'), isNot(contains('private-tool-description')));
+          expect(lines.join('\n'), contains('private-message-content'));
+          expect(lines.join('\n'), contains('http.response_line'));
+          if (configuredTools?.isNotEmpty ?? false) {
+            expect(lines.join('\n'), contains('private-tool-description'));
+          }
         }
       } finally {
         debugPrint = previousDebugPrint;

@@ -790,6 +790,12 @@ class ChatSessionController {
       return;
     }
     logSendTiming('session_materialized');
+    _log.aiTrace('chat.session.materialized', {
+      'previousSessionId': targetSessionId,
+      'temporarySignal': materialized.temporarySignal,
+      'sessionId': materialized.sessionId,
+      'created': materialized.didCreate,
+    });
     targetSessionId = materialized.sessionId;
     currentSession = materialized.session;
     didMigrateToPersistedSession = materialized.didCreate;

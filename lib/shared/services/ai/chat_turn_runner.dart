@@ -1798,6 +1798,10 @@ class ChatTurnRunner {
     _log.info(
       'handleChatCompletion requestId=$requestId textLength=${text.length} sessionId=${turnSession.sessionId}',
     );
+    _log.aiTrace('chat.turn.start sessionId=$sessionId requestId=$requestId', {
+      'text': text,
+      'persistedSessionId': turnSession.sessionId,
+    });
     var uiAssistantStreaming = false;
     AiUsage? finalUsage;
     String? nextStreamingMessageId = streamingMessageId;
@@ -2158,10 +2162,20 @@ class ChatTurnRunner {
             _log.info(
               'requestId=$requestId AgentTextComplete chars=${text.length}',
             );
+            _log.aiTrace('agent text complete', {
+              'sessionId': sessionId,
+              'requestId': requestId,
+              'text': text,
+            });
           case AgentThinkingComplete(:final text):
             _log.info(
               'requestId=$requestId AgentThinkingComplete chars=${text.length}',
             );
+            _log.aiTrace('agent thinking complete', {
+              'sessionId': sessionId,
+              'requestId': requestId,
+              'text': text,
+            });
           case AgentToolCallDelta(
             :final callId,
             :final toolName,
@@ -2191,6 +2205,13 @@ class ChatTurnRunner {
             _log.info(
               'requestId=$requestId AgentToolCallComplete tool=$toolName callId=$callId',
             );
+            _log.aiTrace('agent tool call received complete', {
+              'sessionId': sessionId,
+              'requestId': requestId,
+              'callId': callId,
+              'toolName': toolName,
+              'arguments': arguments,
+            });
             _logRawToolPath(
               requestId: requestId,
               event: 'AgentToolCallComplete',
@@ -2242,6 +2263,13 @@ class ChatTurnRunner {
             _log.info(
               'requestId=$requestId AgentToolCallStart tool=$toolName callId=$callId',
             );
+            _log.aiTrace('agent tool call executing start', {
+              'sessionId': sessionId,
+              'requestId': requestId,
+              'callId': callId,
+              'toolName': toolName,
+              'arguments': arguments,
+            });
             sessionNotifier.setWaitingForResponse(false);
             receivedVisibleBlock = true;
             currentMessageHasVisibleBlock = true;
@@ -2269,6 +2297,15 @@ class ChatTurnRunner {
             _log.info(
               'requestId=$requestId AgentToolCallResult tool=$toolName callId=$callId hasOutput=${output != null}',
             );
+            _log.aiTrace('agent tool call executing result', {
+              'sessionId': sessionId,
+              'requestId': requestId,
+              'callId': callId,
+              'toolName': toolName,
+              'output': output,
+              'metadata': metadata,
+              'errorMessage': errorMessage,
+            });
             if (toolName == codemodeToolName &&
                 sessionNotifier.findToolCallByCallId(callId)?.$2.requestId !=
                     requestId) {
@@ -2538,6 +2575,14 @@ class ChatTurnRunner {
             _log.info(
               'requestId=$requestId AgentDone finalTextChars=${finalText.length} fallback=${!receivedVisibleText}',
             );
+            _log.aiTrace('agent done', {
+              'sessionId': sessionId,
+              'requestId': requestId,
+              'finalText': finalText,
+              'normalTermination': true,
+              'completionMeaning': 'agent_turn_ended_not_image_confirmation',
+              'receivedVisibleText': receivedVisibleText,
+            });
             if (finalText.trim().isNotEmpty) {
               doneFinalText = finalText;
             }
@@ -2564,6 +2609,13 @@ class ChatTurnRunner {
               'requestId=$requestId AgentError failure=$failure '
               'technicalMessage=$technicalMessage',
             );
+            _log.aiTrace('agent error', {
+              'sessionId': sessionId,
+              'requestId': requestId,
+              'failure': failure.toString(),
+              'technicalMessage': technicalMessage,
+              'normalTermination': false,
+            });
             if (failure.isPaymentRequired) {
               onComposerWarning?.call(safeMessage);
               if (uiAssistantStreaming) {

@@ -3052,9 +3052,16 @@ class NovelEditorPage extends HookConsumerWidget {
       String characterId,
     ) async {
       final text = avatarPrompt(prompt);
+      final handoffId = 'char_avatar_${DateTime.now().microsecondsSinceEpoch}';
+      _log.aiTrace('avatar handoff created', {
+        'handoffId': handoffId,
+        'characterId': characterId,
+        'prompt': prompt,
+        'handoffText': text,
+      });
       aiPanelCollapsed.value = false;
       pendingHandoffDraft.value = AiChatHandoffDraft(
-        id: 'char_avatar_${DateTime.now().microsecondsSinceEpoch}',
+        id: handoffId,
         label: context.t(LocaleKeys.aiToolNameGenerateAvatar),
         content: text,
         title: context.t(LocaleKeys.aiToolNameGenerateAvatar),

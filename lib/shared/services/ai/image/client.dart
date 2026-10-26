@@ -32,6 +32,7 @@ import '../image.dart';
 import '../image_reference_compression.dart';
 
 final _log = AppLogger.forModule('Image');
+var _imageWireSequence = 0;
 
 void writeImageLog(String message) => _log.info(message);
 
@@ -114,13 +115,78 @@ abstract class ImageClient {
   }
 
   @protected
-  Dio newImageDio() => Dio(
-    BaseOptions(
-      connectTimeout: imageHttpConnectTimeout,
-      sendTimeout: imageHttpDataTimeout,
-      receiveTimeout: imageHttpDataTimeout,
-    ),
-  );
+  Dio newImageDio() {
+    final dio = Dio(
+      BaseOptions(
+        connectTimeout: imageHttpConnectTimeout,
+        sendTimeout: imageHttpDataTimeout,
+        receiveTimeout: imageHttpDataTimeout,
+      ),
+    );
+    if (_log.aiTraceEnabled) {
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            final wireId = ++_imageWireSequence;
+            options.extra['aiDiagnosticWireId'] = wireId;
+            final data = options.data;
+            _log.aiTrace(
+              'image.http.request imageWireId=$wireId providerId=${config.id}',
+              {
+                'method': options.method,
+                'url': options.uri.toString(),
+                'body': data is FormData
+                    ? {
+                        'fields': data.fields
+                            .map((field) => {field.key: field.value})
+                            .toList(),
+                        'files': data.files
+                            .map(
+                              (file) => {
+                                'field': file.key,
+                                'filename': file.value.filename,
+                                'bytes': file.value.length,
+                                'contentType': '${file.value.contentType}',
+                              },
+                            )
+                            .toList(),
+                      }
+                    : data,
+              },
+              secrets: [config.effectiveApiKey],
+            );
+            handler.next(options);
+          },
+          onResponse: (response, handler) {
+            _log.aiTrace(
+              'image.http.response imageWireId=${response.requestOptions.extra['aiDiagnosticWireId']} providerId=${config.id}',
+              {
+                'status': response.statusCode,
+                'body': response.data is List<int>
+                    ? {'bytes': (response.data as List<int>).length}
+                    : response.data,
+              },
+              secrets: [config.effectiveApiKey],
+            );
+            handler.next(response);
+          },
+          onError: (error, handler) {
+            _log.aiTrace(
+              'image.http.error imageWireId=${error.requestOptions.extra['aiDiagnosticWireId']} providerId=${config.id}',
+              {
+                'status': error.response?.statusCode,
+                'error': '${error.error ?? error.message}',
+                'body': error.response?.data,
+              },
+              secrets: [config.effectiveApiKey],
+            );
+            handler.next(error);
+          },
+        ),
+      );
+    }
+    return dio;
+  }
 
   @protected
   Future<Map<String, dynamic>> postImageJson(
@@ -129,7 +195,13 @@ abstract class ImageClient {
   ) async {
     final apiKey = requireApiKey();
     final client = config.createProxyClient() ?? http.Client();
+    final wireId = ++_imageWireSequence;
     try {
+      _log.aiTrace(
+        'image.http.request imageWireId=$wireId providerId=${config.id}',
+        {'method': 'POST', 'url': uri.toString(), 'body': body},
+        secrets: [apiKey],
+      );
       writeImageLog(
         '[IMGDBG] http_request_start method=POST uri=${safeImageUriForLog(uri)} '
         'provider=${config.id} model=${body['model']}',
@@ -146,6 +218,11 @@ abstract class ImageClient {
           .timeout(imageHttpDataTimeout);
       writeImageLog(
         '[IMGDBG] http_response status=${response.statusCode} uri=${safeImageUriForLog(uri)}',
+      );
+      _log.aiTrace(
+        'image.http.response imageWireId=$wireId providerId=${config.id}',
+        {'status': response.statusCode, 'body': response.body},
+        secrets: [apiKey],
       );
       throwForImageHttpFailure(
         uri: uri,
