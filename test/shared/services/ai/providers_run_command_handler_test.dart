@@ -6,6 +6,7 @@
 //   lib/shared/models/production/image_request.dart
 import 'dart:convert';
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reveric/shared/database/app_database.dart';
 import 'package:reveric/shared/database/novel_content_database.dart';
@@ -165,6 +166,64 @@ void main() {
         ),
         before,
       );
+    },
+  );
+
+  test(
+    'provider query logs include complete results without credentials',
+    () async {
+      final lines = <String>[];
+      final previousDebugPrint = debugPrint;
+      debugPrint = (String? message, {int? wrapWidth}) {
+        if (message != null) {
+          lines.add(message);
+        }
+      };
+      try {
+        for (final (action, options) in <(String, Map<String, dynamic>)>[
+          ('list', {}),
+          ('read', {'provider_id': 'openrouter'}),
+          ('models', {'provider_id': 'openrouter'}),
+          for (final kind in ['chat', 'image', 'video', 'audio'])
+            ('models', {'provider_id': 'openrouter', 'kind': kind}),
+        ]) {
+          lines.clear();
+          final result = await run(action, options);
+          expect(result['ok'], true, reason: '$result');
+          final logs = lines
+              .where(
+                (line) =>
+                    line.contains('[ProvidersRunCommandHandler]') &&
+                    line.contains(' result='),
+              )
+              .toList();
+          expect(logs, hasLength(1), reason: '$action $options');
+          final line = logs.single;
+          expect(line, contains('command=providers subcommand=$action '));
+          expect(line, contains('options=${jsonEncode(options)}'));
+          final logged = jsonDecode(line.split(' result=').last) as Map;
+          expect(logged['ok'], true);
+          if (action == 'read') {
+            expect(logged['id'], 'openrouter');
+            expect(logged['configured'], true);
+          } else {
+            expect(logged['entries'], result['entries']);
+          }
+          expect(line, isNot(contains('secret')));
+          expect(line, isNot(contains('apiKey')));
+          expect(line, isNot(contains('proxyPassword')));
+        }
+        providers = [provider('openrouter').copyWith(videoModels: [])];
+        lines.clear();
+        final result = await run('models', {
+          'provider_id': 'openrouter',
+          'kind': 'video',
+        });
+        expect(result['entries'], isEmpty);
+        expect(lines.join('\n'), contains('"entries":[]'));
+      } finally {
+        debugPrint = previousDebugPrint;
+      }
     },
   );
 

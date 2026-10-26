@@ -3,6 +3,8 @@
 //   lib/shared/services/ai/tools.dart
 //   lib/shared/services/ai/tools_run.dart
 //   lib/shared/services/ai/provider_resources.dart
+import 'dart:convert';
+
 import 'package:collection/collection.dart';
 
 import '../../logger/app_logger.dart';
@@ -93,6 +95,14 @@ class ProvidersRunCommandHandler {
         'Provider configuration could not be read.',
       );
     }
+    Map<String, dynamic> logResult(Map<String, dynamic> result) {
+      _log.info(
+        'command=providers subcommand=$subcommand '
+        'options=${jsonEncode(options)} result=${jsonEncode(result)}',
+      );
+      return result;
+    }
+
     Map<String, dynamic> listing(List<Map<String, dynamic>> entries) {
       final order = sort;
       if (order != null) {
@@ -111,7 +121,7 @@ class ProvidersRunCommandHandler {
           return descending ? -comparison : comparison;
         });
       }
-      return {'ok': true, 'type': 'listing', 'entries': entries};
+      return logResult({'ok': true, 'type': 'listing', 'entries': entries});
     }
 
     if (subcommand == 'list') {
@@ -127,7 +137,7 @@ class ProvidersRunCommandHandler {
       throw const ToolOperationException('not_found', 'Provider not found.');
     }
     if (subcommand == 'read') {
-      return {'ok': true, ...providerResource(provider)};
+      return logResult({'ok': true, ...providerResource(provider)});
     }
     return listing([
       for (final modelKind in kind == null ? kinds : [kind])
