@@ -36,6 +36,16 @@ class TaskPromptUseCase {
     return _render(PromptId.taskWorkspaceAction, vars);
   }
 
+  String characterImage({
+    required String appearance,
+    required bool hasAvatar,
+  }) {
+    return _render(PromptId.taskCharacterImage, {
+      'appearance': appearance,
+      'has_avatar': hasAvatar,
+    });
+  }
+
   String coverAnalysis({
     required String novelTitle,
     required String styleLabel,

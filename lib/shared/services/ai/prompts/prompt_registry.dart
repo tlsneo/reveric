@@ -162,6 +162,13 @@ abstract final class PromptRegistry {
 
     // Tasks.
     PromptDefinition(
+      id: PromptId.taskCharacterImage,
+      kind: PromptKind.task,
+      owner: 'character',
+      templatePath: 'assets/prompts/task/character_image',
+      variables: ['appearance', 'has_avatar'],
+    ),
+    PromptDefinition(
       id: PromptId.taskChunkSegmentation,
       kind: PromptKind.task,
       owner: 'embedding',

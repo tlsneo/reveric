@@ -4920,6 +4920,30 @@ abstract final class LocaleKeys {
       'workspace.character_generate_avatar';
   static const workspaceCharacterGeneratePhoto =
       'workspace.character_generate_photo';
+  static const workspaceCharacterImageGenerate =
+      'workspace.character_image_generate';
+  static const workspaceCharacterImagePreparing =
+      'workspace.character_image_preparing';
+  static const workspaceCharacterImageGenerating =
+      'workspace.character_image_generating';
+  static const workspaceCharacterImageSaved =
+      'workspace.character_image_saved';
+  static const workspaceCharacterImageAppearanceRequired =
+      'workspace.character_image_appearance_required';
+  static const workspaceCharacterImageModelsRequired =
+      'workspace.character_image_models_required';
+  static const workspaceCharacterImageModelUnsupported =
+      'workspace.character_image_model_unsupported';
+  static const workspaceCharacterImageAvatarMissing =
+      'workspace.character_image_avatar_missing';
+  static const workspaceCharacterImagePromptFailed =
+      'workspace.character_image_prompt_failed';
+  static const workspaceCharacterImageCharacterUnavailable =
+      'workspace.character_image_character_unavailable';
+  static const workspaceCharacterImageResultPending =
+      'workspace.character_image_result_pending';
+  static const workspaceCharacterImageFailed =
+      'workspace.character_image_failed';
   static const workspaceCharacterNameHint = 'workspace.character_name_hint';
   static const workspaceCharacterPhotos = 'workspace.character_photos';
   static const workspaceCharacterPickAvatar = 'workspace.character_pick_avatar';

@@ -42,6 +42,7 @@ import '../../../shared/models/character_profile.dart';
 import '../../../shared/services/name_generator_service.dart';
 import '../../../shared/theme/theme.dart';
 import '../../../shared/widgets/character/character_profile_section.dart';
+import '../../../shared/widgets/character/image_generation_button.dart';
 import '../../../shared/widgets/character/character_relations_overview.dart';
 import '../../../shared/widgets/character/character_tag_fields.dart';
 import '../../../shared/widgets/character_avatar.dart';
@@ -616,6 +617,7 @@ class CharacterProfileEditor extends HookConsumerWidget {
                         child: _FigureSection(
                           session: session,
                           prose: prose,
+                          databasePath: currentDatabasePath,
                           onGenerateAvatar: isCreating
                               ? null
                               : _handleGenerateAvatar,
@@ -2419,12 +2421,14 @@ class _FigureSection extends StatelessWidget {
   const _FigureSection({
     required this.session,
     required this.prose,
+    required this.databasePath,
     required this.onGenerateAvatar,
     required this.onGeneratePhoto,
   });
 
   final CharacterProfileEditorSession session;
   final _ProseStyle prose;
+  final String? databasePath;
   final void Function(BuildContext context)? onGenerateAvatar;
   final void Function(BuildContext context)? onGeneratePhoto;
 
@@ -2438,6 +2442,18 @@ class _FigureSection extends StatelessWidget {
           field: CharacterProfileEditFields.appearance,
           prose: prose,
         ),
+        if (!session.isCreating &&
+            session.selectedItemId != null &&
+            databasePath != null) ...[
+          const SizedBox(height: RevericSpacing.md),
+          CharacterImageGenerationButton(
+            key: ValueKey((databasePath, session.selectedItemId)),
+            databasePath: databasePath!,
+            characterId: session.selectedItemId!,
+            appearanceController: session.appearanceController,
+            enabled: !session.avatarPicking && !session.photoAdding,
+          ),
+        ],
         const SizedBox(height: RevericSpacing.x3l),
         CharacterProfileSubLabel(
           text: context.t(LocaleKeys.workspaceCharacterPhotosLabel),

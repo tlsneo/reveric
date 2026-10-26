@@ -49,6 +49,7 @@ import '../../shared/models/character_profile.dart';
 import '../../shared/providers/novel_providers.dart';
 import '../../shared/theme/theme.dart';
 import '../../shared/widgets/character/character_profile_section.dart';
+import '../../shared/widgets/character/image_generation_button.dart';
 import '../../shared/widgets/character/character_relations_overview.dart';
 import '../../shared/widgets/character/character_tag_fields.dart';
 import '../../shared/widgets/character_avatar.dart';
@@ -638,6 +639,15 @@ class _CharacterEditorBody extends HookConsumerWidget {
                                   undoController: undoController,
                                   hintKey: LocaleKeys
                                       .workspaceCharacterAppearanceHint,
+                                ),
+                                const SizedBox(height: RevericSpacing.md),
+                                CharacterImageGenerationButton(
+                                  key: ValueKey((databasePath, character.id)),
+                                  databasePath: databasePath,
+                                  characterId: character.id,
+                                  appearanceController: appearanceController,
+                                  enabled: !picking.value,
+                                  onGenerated: (next) => photos.value = next,
                                 ),
                                 const SizedBox(height: RevericSpacing.x3l),
                                 CharacterProfileSubLabel(
