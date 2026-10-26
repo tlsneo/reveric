@@ -1,4 +1,4 @@
-// 职责: 验证 OpenAI 兼容生图从 URL 拉字节落盘，下载失败不回退 b64。
+// 职责: 验证图片请求等待时限、URL 结果落盘与下载失败处理。
 // 关联文件:
 //   lib/shared/services/ai/image.dart
 //   lib/shared/models/ai_provider.dart
@@ -8,11 +8,13 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reveric/shared/database/app_database.dart';
 import 'package:reveric/shared/models/image/channels.dart';
 import 'package:reveric/shared/services/ai/image.dart';
+import 'package:reveric/shared/services/ai/image/openai.dart';
 
 const _pngBytes = <int>[
   0x89,
@@ -199,6 +201,16 @@ void main() {
     });
   }
 
+  test(
+    'image requests wait 20 minutes while connection timeout stays 30 seconds',
+    () {
+      final options = _TimeoutProbe(_openAiCompatibleProvider(baseUrl)).options;
+      expect(options.connectTimeout, const Duration(seconds: 30));
+      expect(options.sendTimeout, const Duration(minutes: 20));
+      expect(options.receiveTimeout, const Duration(minutes: 20));
+    },
+  );
+
   test('saves COS url bytes to disk without keeping b64', () async {
     final service = AiImageGenerationService(
       _openAiCompatibleProvider(baseUrl),
@@ -246,6 +258,17 @@ void main() {
       ),
     );
   });
+}
+
+class _TimeoutProbe extends OpenAiImageClient {
+  _TimeoutProbe(super.config);
+
+  BaseOptions get options {
+    final client = newImageDio();
+    final options = client.options;
+    client.close();
+    return options;
+  }
 }
 
 AiProvider _openAiCompatibleProvider(String baseUrl) {

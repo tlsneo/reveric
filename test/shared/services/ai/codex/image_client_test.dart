@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -302,6 +303,47 @@ void main() {
       base64Decode((await generate(transport))['data'][0]['b64_json']),
       _png,
     );
+  });
+
+  test('default image timeout allows six minutes and closes at 20 minutes', () {
+    fakeAsync((clock) {
+      final transport = _Client(
+        (_) => Completer<http.StreamedResponse>().future,
+      );
+      final client = CodexImageClient(
+        client: transport,
+        credentials: () async => _auth,
+      );
+      Object? failure;
+      client
+          .generate(
+            prompt: 'x',
+            imageModel: 'gpt-image-2',
+            chatModels: ['gpt-6-luna'],
+          )
+          .then<void>(
+            (_) {},
+            onError: (Object error) {
+              failure = error;
+            },
+          );
+      clock.flushMicrotasks();
+
+      clock.elapse(const Duration(minutes: 6));
+      expect(failure, isNull);
+      expect(transport.closed, isFalse);
+
+      clock.elapse(const Duration(minutes: 14));
+      expect(
+        failure,
+        isA<CodexImageException>().having(
+          (error) => error.reason,
+          'reason',
+          'timeout',
+        ),
+      );
+      expect(transport.closed, isTrue);
+    });
   });
 
   test('timeout closes the transport', () async {

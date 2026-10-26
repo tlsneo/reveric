@@ -36,7 +36,7 @@ final _log = AppLogger.forModule('Image');
 void writeImageLog(String message) => _log.info(message);
 
 const imageHttpConnectTimeout = Duration(seconds: 30);
-const imageHttpDataTimeout = Duration(minutes: 5);
+const imageHttpDataTimeout = Duration(minutes: 20);
 
 /// 一次图片生成；[images] 为空时是文生图，否则按参考图编辑。
 class ImageGenerationRequest {

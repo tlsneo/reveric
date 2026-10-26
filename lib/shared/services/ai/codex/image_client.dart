@@ -33,7 +33,7 @@ class CodexImageClient {
     required http.Client client,
     Future<CodexCredentials> Function()? credentials,
     Random? random,
-    this.timeout = const Duration(minutes: 5),
+    this.timeout = const Duration(minutes: 20),
   }) : _client = client,
        _credentials =
            credentials ?? (() => CodexCredentials.load(client: client)),
