@@ -165,7 +165,7 @@ mixin StreamingResource on ResourceBase {
       } catch (e) {
         // Close client on send() error too
         closeClientOnce();
-        // 消费方主动 abort（2 分钟无事件超时 / 用户取消）时，关闭 dedicated
+        // 消费方主动 abort（流式无事件超时 / 用户取消）时，关闭 dedicated
         // client 会使 send() 失败。此刻消费方正在拆除订阅：若抛 AbortedException
         // 会落入已取消的 async* 生成器，变成 zone 级 unhandled（匿名库误报为
         // uncaught_async）。返回空 200 响应让生成器正常结束，abort 由消费方的

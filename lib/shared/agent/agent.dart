@@ -49,7 +49,7 @@ int streamRetryLimit({required String? providerId, int? statusCode}) {
 ///
 /// HTTP/SSE 连接可能在服务端已经结束后仍既不产出事件、也不关闭或抛错。没有该边界时，
 /// [process] 会永久停在 `await for`，上层的 assistant streaming 气泡也无法收口。
-const Duration defaultAgentStreamInactivityTimeout = Duration(minutes: 2);
+const Duration defaultAgentStreamInactivityTimeout = Duration(minutes: 10);
 
 /// 连续「只思考、不产出」轮次的上限，超过即判定模型陷住并终止。
 ///

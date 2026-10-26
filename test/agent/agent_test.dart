@@ -9,6 +9,7 @@ import 'package:reveric/shared/utils/ai_error.dart';
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' show ClientException;
 import 'package:openai_dart/openai_dart.dart' as openai;
@@ -94,7 +95,7 @@ class _NeverCompletingStreamClient implements ProviderClient {
     calls += 1;
     late final StreamController<StreamEvent> controller;
     controller = StreamController<StreamEvent>(
-      onCancel: () {
+      onCancel: () async {
         _controllers.remove(controller);
       },
     );
@@ -1883,6 +1884,48 @@ void main() {
         events.whereType<AgentError>().single.failure.kind,
         AiRunFailureKind.network,
       );
+    });
+
+    test('default stream timeout allows 10 minutes between events', () {
+      fakeAsync((clock) {
+        final client = _NeverCompletingStreamClient();
+        final agent = Agent.custom(
+          id: 'timeout-test',
+          systemPrompt: 'Be helpful.',
+          client: client,
+          config: const AgentConfig(),
+          toolManager: const _FakeToolDispatcher(),
+        );
+        final events = <AgentEvent>[];
+        var finished = false;
+        agent.process('hi').listen(events.add, onDone: () => finished = true);
+        clock.flushMicrotasks();
+
+        clock.elapse(const Duration(minutes: 9));
+        expect(client.calls, 1);
+        expect(client.cancelCalls, 0);
+        expect(events.whereType<AgentRoundRetry>(), isEmpty);
+
+        client._controllers.single.add(TextDelta('working'));
+        clock.flushMicrotasks();
+        expect(events.whereType<AgentTextDelta>().single.text, 'working');
+        clock.elapse(const Duration(minutes: 9, seconds: 59));
+        expect(client.cancelCalls, 0);
+
+        clock.elapse(const Duration(seconds: 1));
+        expect(client.cancelCalls, 1);
+        expect(
+          events.whereType<AgentRoundRetry>().single.reason,
+          contains('600000ms'),
+        );
+
+        agent.cancel();
+        clock.elapse(const Duration(seconds: 1));
+        expect(finished, true);
+        expect(events.whereType<AgentCancelled>(), hasLength(1));
+        unawaited(client.close());
+        clock.flushMicrotasks();
+      });
     });
 
     test(
