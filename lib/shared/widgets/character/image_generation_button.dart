@@ -1,4 +1,4 @@
-// 职责: 在人物形象区域发起一键生图并展示整理、生成、保存状态。
+// 职责: 发起人物四视图生成并展示整理、生成、保存状态。
 // 关联文件:
 //   lib/shared/providers/character_image.dart
 //   lib/shared/services/character/image_orchestrator.dart
@@ -34,6 +34,7 @@ class CharacterImageGenerationButton extends ConsumerWidget {
     required this.appearanceController,
     this.onGenerated,
     this.enabled = true,
+    this.compact = false,
   });
 
   final String databasePath;
@@ -41,6 +42,7 @@ class CharacterImageGenerationButton extends ConsumerWidget {
   final TextEditingController appearanceController;
   final ValueChanged<List<SubjectPhoto>>? onGenerated;
   final bool enabled;
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -57,61 +59,73 @@ class CharacterImageGenerationButton extends ConsumerWidget {
         LocaleKeys.workspaceCharacterImageGenerating,
       CharacterImageStage.saving => LocaleKeys.commonSaving,
     };
-    return Align(
-      alignment: AlignmentDirectional.centerEnd,
-      child: RevericButton.secondary(
-        label: context.t(labelKey),
-        icon: RevericIcons.auto_awesome_outlined,
-        loading: stage != null,
-        onPressed: !enabled || stage != null
-            ? null
-            : () async {
-                // 读取编辑器当前值，不能等防抖落库后再生成，也不覆盖人物形象原文。
-                final appearance = appearanceController.text;
-                try {
-                  final photos = await ref
-                      .read(provider.notifier)
-                      .generate(appearance);
-                  if (!context.mounted) {
-                    return;
-                  }
-                  onGenerated?.call(photos);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        context.t(LocaleKeys.workspaceCharacterImageSaved),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: compact
+          ? CrossAxisAlignment.stretch
+          : CrossAxisAlignment.end,
+      children: [
+        RevericButton.secondary(
+          size: compact
+              ? RevericButtonSize.compact
+              : RevericButtonSize.standard,
+          labelMaxLines: compact ? 1 : null,
+          label: context.t(labelKey),
+          icon: RevericIcons.auto_awesome_outlined,
+          loading: stage != null,
+          onPressed: !enabled || stage != null
+              ? null
+              : () async {
+                  // 读取编辑器当前值，不能等防抖落库后再生成，也不覆盖人物形象原文。
+                  final appearance = appearanceController.text;
+                  try {
+                    final photos = await ref
+                        .read(provider.notifier)
+                        .generate(appearance);
+                    if (!context.mounted) {
+                      return;
+                    }
+                    onGenerated?.call(photos);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          context.t(LocaleKeys.workspaceCharacterImageSaved),
+                        ),
                       ),
-                    ),
-                  );
-                } catch (error) {
-                  if (!context.mounted) {
-                    return;
+                    );
+                  } catch (error) {
+                    if (!context.mounted) {
+                      return;
+                    }
+                    final key = switch (error) {
+                      CharacterImageException(:final failure) =>
+                        switch (failure) {
+                          CharacterImageFailure.empty_appearance =>
+                            LocaleKeys
+                                .workspaceCharacterImageAppearanceRequired,
+                          CharacterImageFailure.missing_model =>
+                            LocaleKeys.workspaceCharacterImageModelsRequired,
+                          CharacterImageFailure.unsupported_model =>
+                            LocaleKeys.workspaceCharacterImageModelUnsupported,
+                          CharacterImageFailure.missing_avatar =>
+                            LocaleKeys.workspaceCharacterImageAvatarMissing,
+                          CharacterImageFailure.empty_prompt =>
+                            LocaleKeys.workspaceCharacterImagePromptFailed,
+                          CharacterImageFailure.character_unavailable =>
+                            LocaleKeys
+                                .workspaceCharacterImageCharacterUnavailable,
+                        },
+                      AiImageFetchException() =>
+                        LocaleKeys.workspaceCharacterImageResultPending,
+                      _ => LocaleKeys.workspaceCharacterImageFailed,
+                    };
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(context.t(key))));
                   }
-                  final key = switch (error) {
-                    CharacterImageException(:final failure) => switch (failure) {
-                      CharacterImageFailure.empty_appearance =>
-                        LocaleKeys.workspaceCharacterImageAppearanceRequired,
-                      CharacterImageFailure.missing_model =>
-                        LocaleKeys.workspaceCharacterImageModelsRequired,
-                      CharacterImageFailure.unsupported_model =>
-                        LocaleKeys.workspaceCharacterImageModelUnsupported,
-                      CharacterImageFailure.missing_avatar =>
-                        LocaleKeys.workspaceCharacterImageAvatarMissing,
-                      CharacterImageFailure.empty_prompt =>
-                        LocaleKeys.workspaceCharacterImagePromptFailed,
-                      CharacterImageFailure.character_unavailable =>
-                        LocaleKeys.workspaceCharacterImageCharacterUnavailable,
-                    },
-                    AiImageFetchException() =>
-                      LocaleKeys.workspaceCharacterImageResultPending,
-                    _ => LocaleKeys.workspaceCharacterImageFailed,
-                  };
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(context.t(key))),
-                  );
-                }
-              },
-      ),
+                },
+        ),
+      ],
     );
   }
 }

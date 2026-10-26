@@ -11,6 +11,7 @@
 
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,6 +33,7 @@ import 'package:reveric/shared/services/novel_content.dart';
 import 'package:reveric/shared/services/working_overlay.dart';
 import 'package:reveric/shared/theme/theme.dart';
 import 'package:reveric/shared/widgets/character/character_profile_section.dart';
+import 'package:reveric/shared/widgets/character/image_generation_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _databasePath = 'desktop_character_editor_region_test';
@@ -68,6 +70,92 @@ void main() {
     await contentDatabase.close();
     await appDatabase.close();
   });
+
+  for (final platform in [
+    TargetPlatform.macOS,
+    TargetPlatform.windows,
+    TargetPlatform.linux,
+  ]) {
+    for (final width in [600.0, 1000.0]) {
+      testWidgets(
+        'image generation follows avatar actions on $platform at width $width',
+        (tester) async {
+          debugDefaultTargetPlatformOverride = platform;
+          tester.view.physicalSize = const Size(1100, 800);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(() {
+            debugDefaultTargetPlatformOverride = null;
+            tester.view.resetPhysicalSize();
+            tester.view.resetDevicePixelRatio();
+          });
+          await tester.pumpWidget(
+            _wrap(
+              ProviderScope(
+                overrides: [
+                  novelContentDatabaseProvider(
+                    _databasePath,
+                  ).overrideWithValue(contentDatabase),
+                  novelContentServiceProvider(
+                    _databasePath,
+                  ).overrideWithValue(contentService),
+                  workingOverlayServiceProvider(
+                    _databasePath,
+                  ).overrideWithValue(overlayService),
+                  isImageGenerationConfiguredProvider.overrideWithValue(false),
+                  editorFontFamilyProvider.overrideWithValue('Georgia'),
+                  editorFontSizeProvider.overrideWithValue(16),
+                  editorLetterSpacingProvider.overrideWithValue(0),
+                  editorLineHeightProvider.overrideWithValue(1.8),
+                ],
+                child: CharacterProfileEditorRegion(
+                  databasePath: _databasePath,
+                  selection: WorkspaceSelection(
+                    section: NovelWorkspaceSection.characters,
+                    itemId: characterAId,
+                  ),
+                  novel: _novel(_databasePath),
+                  controller: CharacterProfileEditorRegionController(),
+                  nameAssistantAiService: null,
+                  host: CharacterProfileEditorRegionHost(
+                    onCreateCharacter: () {},
+                    onSavingChanged: (_) {},
+                    onGenerateAvatar: (_, _) async {},
+                    onGeneratePhoto: (_, _) async {},
+                  ),
+                ),
+              ),
+              width: width,
+            ),
+          );
+          await tester.pumpAndSettle();
+          final generation = find.byType(CharacterImageGenerationButton);
+          expect(generation, findsOneWidget);
+          final avatar = find.widgetWithText(OutlinedButton, '生成头像');
+          final actions = find
+              .ancestor(of: avatar, matching: find.byType(Column))
+              .first;
+          expect(
+            tester
+                .widget<Column>(actions)
+                .children
+                .whereType<CharacterImageGenerationButton>(),
+            hasLength(1),
+            reason: '一键生图必须是头像操作列的直接子项，不能留在外观文字下方',
+          );
+          await tester.ensureVisible(generation);
+          await tester.pumpAndSettle();
+          final avatarRect = tester.getRect(avatar);
+          final generationRect = tester.getRect(generation);
+          expect(generationRect.top, greaterThan(avatarRect.bottom));
+          expect(generationRect.left, closeTo(avatarRect.left, 0.1));
+          expect(generationRect.width, closeTo(avatarRect.width, 0.1));
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pumpAndSettle();
+        },
+      );
+    }
+  }
 
   testWidgets('empty selection transition and character drafts stay isolated', (
     tester,
@@ -331,7 +419,7 @@ Novel _novel(String databasePath) {
   );
 }
 
-Widget _wrap(Widget child) {
+Widget _wrap(Widget child, {double width = 700}) {
   return EasyLocalization(
     supportedLocales: const [Locale('zh', 'CN')],
     path: 'assets/translations',
@@ -350,7 +438,7 @@ Widget _wrap(Widget child) {
             child: Scaffold(
               body: Align(
                 alignment: Alignment.topLeft,
-                child: SizedBox(width: 700, height: 360, child: child),
+                child: SizedBox(width: width, height: 360, child: child),
               ),
             ),
           ),

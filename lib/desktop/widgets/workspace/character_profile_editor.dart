@@ -1025,6 +1025,7 @@ class _CharacterBehaviorTagRow extends HookWidget {
 
 class _CharacterImageBand extends StatelessWidget {
   const _CharacterImageBand({
+    this.imageGenerationButton,
     required this.avatarAssetId,
     required this.photos,
     required this.avatarPicking,
@@ -1051,9 +1052,13 @@ class _CharacterImageBand extends StatelessWidget {
   final Future<void> Function() onRemoveAvatar;
   final void Function(BuildContext context)? onGenerateAvatar;
   final void Function(BuildContext context)? onGeneratePhoto;
+  final Widget? imageGenerationButton;
 
   @override
   Widget build(BuildContext context) {
+    final avatarHeight = imageGenerationButton == null
+        ? 164.0
+        : 164.0 + RevericSizes.buttonHeightSm + RevericSpacing.xs;
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 620) {
@@ -1062,7 +1067,7 @@ class _CharacterImageBand extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SizedBox(
-                height: 164,
+                height: avatarHeight,
                 child: _AvatarSection(
                   avatarAssetId: avatarAssetId,
                   isPicking: avatarPicking,
@@ -1070,6 +1075,7 @@ class _CharacterImageBand extends StatelessWidget {
                   onPick: onPickAvatar,
                   onRemove: onRemoveAvatar,
                   onGenerate: onGenerateAvatar,
+                  imageGenerationButton: imageGenerationButton,
                 ),
               ),
               const SizedBox(height: RevericSpacing.x2l),
@@ -1091,7 +1097,7 @@ class _CharacterImageBand extends StatelessWidget {
         }
 
         return SizedBox(
-          height: 164,
+          height: avatarHeight,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -1104,6 +1110,7 @@ class _CharacterImageBand extends StatelessWidget {
                   onPick: onPickAvatar,
                   onRemove: onRemoveAvatar,
                   onGenerate: onGenerateAvatar,
+                  imageGenerationButton: imageGenerationButton,
                 ),
               ),
               const SizedBox(width: RevericSpacing.x2l),
@@ -1194,6 +1201,7 @@ class _CharacterChapterLink extends HookConsumerWidget {
 
 class _AvatarSection extends StatelessWidget {
   const _AvatarSection({
+    this.imageGenerationButton,
     required this.avatarAssetId,
     required this.isPicking,
     required this.isImageGenerationConfigured,
@@ -1208,6 +1216,7 @@ class _AvatarSection extends StatelessWidget {
   final Future<void> Function() onPick;
   final Future<void> Function() onRemove;
   final void Function(BuildContext context)? onGenerate;
+  final Widget? imageGenerationButton;
 
   @override
   Widget build(BuildContext context) {
@@ -1267,6 +1276,10 @@ class _AvatarSection extends StatelessWidget {
                         )
                       else
                         const SizedBox.shrink(),
+                      if (imageGenerationButton != null) ...[
+                        const SizedBox(height: RevericSpacing.xs),
+                        imageGenerationButton!,
+                      ],
                     ],
                   ),
                 ),
@@ -2442,18 +2455,6 @@ class _FigureSection extends StatelessWidget {
           field: CharacterProfileEditFields.appearance,
           prose: prose,
         ),
-        if (!session.isCreating &&
-            session.selectedItemId != null &&
-            databasePath != null) ...[
-          const SizedBox(height: RevericSpacing.md),
-          CharacterImageGenerationButton(
-            key: ValueKey((databasePath, session.selectedItemId)),
-            databasePath: databasePath!,
-            characterId: session.selectedItemId!,
-            appearanceController: session.appearanceController,
-            enabled: !session.avatarPicking && !session.photoAdding,
-          ),
-        ],
         const SizedBox(height: RevericSpacing.x3l),
         CharacterProfileSubLabel(
           text: context.t(LocaleKeys.workspaceCharacterPhotosLabel),
@@ -2472,6 +2473,19 @@ class _FigureSection extends StatelessWidget {
           onRemoveAvatar: session.onRemoveAvatar,
           onGenerateAvatar: onGenerateAvatar,
           onGeneratePhoto: onGeneratePhoto,
+          imageGenerationButton:
+              !session.isCreating &&
+                  session.selectedItemId != null &&
+                  databasePath != null
+              ? CharacterImageGenerationButton(
+                  key: ValueKey((databasePath, session.selectedItemId)),
+                  databasePath: databasePath!,
+                  characterId: session.selectedItemId!,
+                  appearanceController: session.appearanceController,
+                  enabled: !session.avatarPicking && !session.photoAdding,
+                  compact: true,
+                )
+              : null,
         ),
       ],
     );
