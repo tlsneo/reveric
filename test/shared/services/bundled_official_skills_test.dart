@@ -155,6 +155,50 @@ void main() {
     expect(detail.badge, '推荐');
   });
 
+  test(
+    'screenplay skill exposes the pasted-material route and real write handoff',
+    () async {
+      final detail = await loader.get(bundle, '剧本写作');
+      final references = {
+        for (final reference in detail.references)
+          reference.path: reference.content,
+      };
+
+      expect(detail.version, 2);
+      expect(detail.whenToUse, contains('混合草稿'));
+      expect(detail.prompt, contains('用户粘贴内容'));
+      expect(detail.prompt, contains('不要求用户先分类'));
+      expect(
+        detail.prompt,
+        contains('| 安排、拆分或合并场次 | [自然分场](references/episode-planning.md)'),
+      );
+      final adaptation = references['references/adaptation.md']!;
+      expect(adaptation, contains('纯对白不凭空给台词配说话人'));
+      expect(adaptation, contains('[改编决策](adaptation-decisions.md)'));
+      expect(adaptation, contains('3. **写前检验因果**'));
+      expect(adaptation, contains('4. **交付本次范围**'));
+      expect(adaptation, contains('5. **写后回读**'));
+      expect(
+        references['references/source-analysis.md'],
+        contains('尚未写入的事件仍是来源材料'),
+      );
+      expect(
+        references['references/episode-planning.md'],
+        contains('固定秒数不是机械切场依据'),
+      );
+      expect(
+        references['references/episode-planning.md'],
+        contains('时间、地点、参与人物、主要行动、进入与离开时的状态'),
+      );
+      expect(references['references/scene-writing.md'], contains('完整正文元素'));
+      expect(references['references/scene-writing.md'], contains('写入责任'));
+      expect(
+        references['references/scene-writing.md'],
+        contains('不因要求写正文就默认授权修改资料'),
+      );
+    },
+  );
+
   test('badge from the spec table reaches the summary list', () async {
     final result = await loader.list(bundle);
     final badged = {

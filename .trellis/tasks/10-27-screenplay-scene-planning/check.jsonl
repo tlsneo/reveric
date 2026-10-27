@@ -1,0 +1,8 @@
+{"file":".agents/rules/agent-skills.md","reason":"Verify discovery/reference routing, content ownership and official-skill compatibility."}
+{"file":".agents/rules/ai-calling.md","reason":"Ensure no unapproved tool/schema changes or unnecessary Agent pipeline were introduced."}
+{"file":".agents/rules/tools_path.md","reason":"Verify scene metadata/body/cast paths against existing resources without API changes."}
+{"file":".agents/rules/testing.md","reason":"Check full affected scope with serial pinned-SDK tests and honest quality/runtime limits."}
+{"file":".agents/rules/code-style.md","reason":"Check the small registry and regression-test Dart changes."}
+{"file":".trellis/tasks/10-27-screenplay-scene-planning/research/scene-planning.md","reason":"Adversarially verify scene-boundary guidance, quiet-scene support, source/body reading and preserved scope."}
+{"file":".trellis/tasks/10-27-screenplay-scene-planning/research/official-skill-maintenance.md","reason":"Verify approved release/version decision, content hash and custom/disabled installation preservation."}
+{"file": ".trellis/tasks/10-27-screenplay-scene-planning/research/adaptation-entry.md", "reason": "Verify source/target separation, explicit initiation, entity reuse and no silent full-book processing."}

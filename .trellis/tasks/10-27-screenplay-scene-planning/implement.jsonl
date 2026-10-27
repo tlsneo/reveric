@@ -1,0 +1,9 @@
+{"file":".agents/rules/agent-skills.md","reason":"Keep professional writing methods and bundled read/write contracts in their existing owners; preserve skill overrides and reference routing."}
+{"file":".agents/rules/ai-calling.md","reason":"Do not change tool descriptions, dynamic schemas or the existing Agent call architecture."}
+{"file":".agents/rules/tools_path.md","reason":"Use actual scene/body resource paths and retain ID/field-reading contracts."}
+{"file":".agents/rules/testing.md","reason":"Run narrow Flutter tests serially and distinguish loaded instruction tests from actual model-quality verification."}
+{"file":".agents/rules/code-style.md","reason":"Apply existing Dart conventions to registry/test edits only."}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"Reuse the current writing skill, attachments and operation reference rather than add parallel abstractions."}
+{"file":".trellis/tasks/10-27-screenplay-scene-planning/research/scene-planning.md","reason":"Source-backed ownership, exact upstream gaps, scope and acceptance examples."}
+{"file":".trellis/tasks/10-27-screenplay-scene-planning/research/official-skill-maintenance.md","reason":"Release evidence blocker, fingerprint algorithm, loading/override semantics and snapshot maintenance limits."}
+{"file": ".trellis/tasks/10-27-screenplay-scene-planning/research/adaptation-entry.md", "reason": "Current create/save behavior and revised integrated adaptation scope; old instruction-only plan is superseded."}
