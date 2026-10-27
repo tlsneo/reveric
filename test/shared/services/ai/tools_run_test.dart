@@ -961,17 +961,24 @@ void main() {
     );
 
     test(
-      'real image callbacks commit once and handlers consume durable generated and edited files',
+      'real image callbacks commit character and item results once without adopting item photos',
       () async {
         HttpOverrides.global = null;
         final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
         addTearDown(() => server.close(force: true));
         var calls = 0;
+        final requests = <({String method, Uri target, String body})>[];
         final bytes = base64Decode(
           'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
         );
         server.listen((request) async {
-          await request.drain<void>();
+          requests.add((
+            method: request.method,
+            target: request.requestedUri,
+            body: await const Utf8Decoder(
+              allowMalformed: true,
+            ).bind(request).join(),
+          ));
           calls++;
           request.response.headers.contentType = ContentType.json;
           request.response.write(
@@ -994,8 +1001,8 @@ void main() {
           enabled: true,
           apiKey: 'fixture',
           baseUrl: 'http://127.0.0.1:${server.port}/v1',
-          models: const [],
-          imageModels: const ['image-advance'],
+          models: const ['chat-only'],
+          imageModels: const ['image-default', 'image-advance'],
           audioModels: const [],
           videoModels: const [],
           embeddingModels: const [],
@@ -1040,6 +1047,10 @@ void main() {
           generate: generated.read(),
           edit: edited.read(),
         );
+        final content = NovelContentService(db);
+        await content.addItemPhotos('item_1', ['existing-photo']);
+        await content.renameItemPhoto('item_1', 'existing-photo', '保留照片');
+        final itemBefore = (await content.getItemById('item_1'))!;
         final first = await runSubjectImage('character', 'generate-avatar', {
           'character': 'c_1',
           'prompt': 'first prompt',
@@ -1051,17 +1062,57 @@ void main() {
           'path': first['local_path'],
         });
         expect(second['ok'], true, reason: '$second');
-        for (final result in [first, second]) {
+        expect(calls, 2);
+        const itemPrompt = '古剑，保留缺口与铭文。插画风格，冷色柔光。';
+        final photo = await runSubjectImage('item', 'generate-photo', {
+          'item': 'item_1',
+          'prompt': itemPrompt,
+        });
+        expect(photo['ok'], true, reason: '$photo');
+        expect(photo['success'], true);
+        expect(photo['command'], 'item generate-photo');
+        expect(photo['item_id'], 'item_1');
+        expect(photo['_metadata'], {
+          'scene': 'item.generate-photo',
+          'item_id': 'item_1',
+        });
+        expect(calls, 3, reason: '一次物品命令只提交一次图片请求');
+        expect(requests, hasLength(3));
+        expect(requests.map((request) => request.method), everyElement('POST'));
+        expect(requests.map((request) => request.target.path), [
+          '/v1/images/generations',
+          '/v1/images/edits',
+          '/v1/images/generations',
+        ]);
+        expect(
+          requests.map((request) => request.target.origin),
+          everyElement('http://127.0.0.1:${server.port}'),
+        );
+        final itemRequest =
+            jsonDecode(requests.last.body) as Map<String, dynamic>;
+        expect(itemRequest, containsPair('model', 'image-advance'));
+        expect(itemRequest, containsPair('prompt', itemPrompt));
+        expect(itemRequest, containsPair('size', '864x1536'));
+        expect(itemRequest, containsPair('n', 1));
+        expect(
+          jsonDecode(requests.first.body),
+          containsPair('model', 'image-advance'),
+        );
+        expect(
+          (await content.getItemById('item_1'))!.toJson(),
+          itemBefore.toJson(),
+          reason: '生成结果不自动追加照片或修改物品资料',
+        );
+        for (final (index, result) in [first, second, photo].indexed) {
           expect(result['local_path'], startsWith('images/'));
-          expect(
-            await File(
-              '${RevericPaths.supportRoot}/file_workspaces/work/${result['local_path']}',
-            ).exists(),
-            true,
+          final file = File(
+            '${RevericPaths.supportRoot}/file_workspaces/work/${result['local_path']}',
           );
+          expect(await file.exists(), true);
+          expect(await file.readAsBytes(), [...bytes, index + 1]);
         }
         final assets = await appDb.select(appDb.assets).get();
-        expect(assets, hasLength(2));
+        expect(assets, hasLength(3));
         expect(
           assets.map((a) => a.purpose),
           everyElement(AssetPurpose.ai_chat_generated.value),
@@ -1069,8 +1120,19 @@ void main() {
         expect(assets.map((a) => a.prompt).toSet(), {
           'first prompt',
           'edit prompt',
+          itemPrompt,
         });
         expect(assets.map((a) => a.model), everyElement('image-advance'));
+        final itemAsset = assets.singleWhere(
+          (asset) => asset.prompt == itemPrompt,
+        );
+        expect(itemAsset.novelId, 'work');
+        expect(
+          await File(library.resolve(itemAsset.path)!).readAsBytes(),
+          await File(
+            '${RevericPaths.supportRoot}/file_workspaces/work/${photo['local_path']}',
+          ).readAsBytes(),
+        );
         expect(
           Directory('${RevericPaths.supportRoot}/file_workspaces')
               .listSync(recursive: true)

@@ -1,0 +1,30 @@
+{
+  "id": "item-photo-command-routing",
+  "name": "item-photo-command-routing",
+  "title": "物品照片生成命令路由修复",
+  "description": "修复物品照片入口未调用已配置图片模型的问题；复核大头照与同类入口，不改正常的制作生图或扩展聊天图片支持。",
+  "status": "in_progress",
+  "dev_type": "frontend",
+  "scope": "item-photo",
+  "package": null,
+  "priority": "P2",
+  "creator": "tlsneo",
+  "assignee": "tlsneo",
+  "createdAt": "2026-10-27",
+  "completedAt": null,
+  "branch": "unstable",
+  "base_branch": "unstable",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "lib/desktop/widgets/workspace/workspace_item_editor.dart",
+    "test/desktop/widgets/workspace/workspace_entry_editor_test.dart",
+    "test/shared/services/ai/tools_run_test.dart"
+  ],
+  "notes": "Three-file implementation and independent gpt-6.1-sol check complete: 143 tests passed; analysis/format/diff clean. Read-only assistant audits recorded separate target/diagnostic/skill risks without expanding code scope. Scoped commit authorized; real models/devices and generic chat image handling remain unverified/unfixed. Task stays in_progress until administrative finish/archive.",
+  "meta": {}
+}

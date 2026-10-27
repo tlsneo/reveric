@@ -1,0 +1,12 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Full-scope check of affected UI layer"}
+{"file":".trellis/spec/backend/index.md","reason":"Full-scope check of image command integration tests"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Frontend quality checklist"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Backend quality checklist; native Codemode section is unrelated"}
+{"file":".agents/rules/code-style.md","reason":"Dart formatting and style"}
+{"file":".agents/rules/ai-calling.md","reason":"No tool descriptions/schema or duplicate image path changes"}
+{"file":".agents/rules/testing.md","reason":"RED/GREEN, serial tests and actual callback evidence"}
+{"file":".agents/rules/error-handling.md","reason":"Preserve failure and no-fallback behavior"}
+{"file":".trellis/tasks/10-27-item-photo-command-routing/research/item-route.md","reason":"Primary failure evidence and scope exclusions"}
+{"file": ".trellis/tasks/10-27-item-photo-command-routing/research/entry-audit.md", "reason": "Verify no scope creep into audited image routes"}
+{"file": ".trellis/tasks/10-27-item-photo-command-routing/research/shared-runtime-audit.md", "reason": "Independently verify shared runtime audit claims; do not expand code changes"}
+{"file": ".trellis/tasks/10-27-item-photo-command-routing/research/assistant-entry-audit.md", "reason": "Verify bounded assistant-entry findings and do not expand scope"}

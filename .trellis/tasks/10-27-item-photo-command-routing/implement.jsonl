@@ -1,0 +1,12 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Item entry UI ownership and package scope"}
+{"file":".trellis/spec/backend/index.md","reason":"Existing image command callback integration boundaries"}
+{"file":".agents/rules/code-style.md","reason":"Dart control flow conventions"}
+{"file":".agents/rules/ai-calling.md","reason":"Reuse existing Run command; do not change tool description or schema"}
+{"file":".agents/rules/hooks.md","reason":"Existing HookWidget lifecycle remains unchanged"}
+{"file":".agents/rules/state-management.md","reason":"No new shared state or provider lifecycle workaround"}
+{"file":".agents/rules/design-system.md","reason":"Keep current dialog layout and components"}
+{"file":".agents/rules/performance.md","reason":"No rebuild or content refresh changes"}
+{"file":".agents/rules/error-handling.md","reason":"Do not mask missing image dependencies with fallbacks"}
+{"file":".agents/rules/testing.md","reason":"Serial pinned tests, localized cache clearing and meaningful regressions"}
+{"file":".trellis/tasks/10-27-item-photo-command-routing/research/item-route.md","reason":"Verified failing item path, minimal three-file plan and test seams"}
+{"file": ".trellis/tasks/10-27-item-photo-command-routing/research/entry-audit.md", "reason": "Keep working production/character/mobile paths unchanged; distinguish static risk from proven bug"}
