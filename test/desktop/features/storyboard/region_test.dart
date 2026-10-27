@@ -1,4 +1,4 @@
-// 职责: 验证分镜列表外部刷新、菜单删除确认和片段及画布节点的软删除。
+// 职责: 验证 AI 拆分镜请求与点击不写入，以及列表刷新、删除确认和片段及画布节点的软删除。
 // 关联文件:
 //   lib/desktop/features/storyboard/region.dart
 //   lib/shared/providers/storyboard.dart
@@ -13,6 +13,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:reveric/desktop/features/production/edit_session.dart';
 import 'package:reveric/desktop/features/storyboard/region.dart';
 import 'package:reveric/shared/database/app_database.dart';
 import 'package:reveric/shared/database/novel_content_database.dart';
@@ -38,7 +39,7 @@ void main() {
           .load();
     }
   });
-  testWidgets('grouped shots update from external writes without reopening', (
+  testWidgets('AI split preserves clips; grouped shots refresh and delete', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -109,6 +110,14 @@ void main() {
       deletedAt: notDeletedSentinel,
     );
     final boundary = GlobalKey();
+    final requests = <String>[];
+    final sceneActions = ValueNotifier<ProductionSceneActions?>(
+      ProductionSceneActions(
+        ask: requests.add,
+        openDirector: (_, {canvas}) async {},
+      ),
+    );
+    addTearDown(sceneActions.dispose);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -138,7 +147,13 @@ void main() {
                     key: boundary,
                     child: ColoredBox(
                       color: RevericThemeData.reveric.colors.canvas,
-                      child: StoryboardRegion(novel: novel),
+                      child: ValueListenableBuilder<ProductionSceneActions?>(
+                        valueListenable: sceneActions,
+                        builder: (_, actions, _) => StoryboardRegion(
+                          novel: novel,
+                          sceneActions: actions,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -150,6 +165,109 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('门口的灯'), findsOneWidget);
+    final clipsBeforeSplit = (await db.select(db.productionClips).get())
+        .map((row) => row.toJson())
+        .toList();
+    final splitButtons = find.widgetWithText(RevericButton, 'Split with AI');
+    expect(splitButtons, findsNWidgets(2));
+    expect(requests, isEmpty);
+    for (var i = 0; i < 2; i++) {
+      await tester.ensureVisible(splitButtons.at(i));
+      await tester.tap(splitButtons.at(i));
+      await tester.pumpAndSettle();
+      expect(requests, hasLength(i + 1));
+      expect(
+        (await db.select(db.productionClips).get()).map((row) => row.toJson()),
+        clipsBeforeSplit,
+      );
+    }
+    for (var i = 0; i < requests.length; i++) {
+      final request = requests[i];
+      final sceneId = [first, second][i];
+      expect(
+        request,
+        allOf(
+          contains('/scenes/$sceneId'),
+          contains('/scenes/$sceneId/elements'),
+          contains('完整正文'),
+          contains('真实角色、地点'),
+          contains('当前集已有分镜'),
+        ),
+        reason: 'Split scope must include the full scene and real resources',
+      );
+      expect(
+        request,
+        allOf(
+          contains('剧本制片'),
+          contains('制片流程、分镜指南、模型能力、视频提示词'),
+          contains('剧本工具使用规范'),
+          contains('分镜与媒体节点附件'),
+          contains('查询实际型号与渠道能力'),
+        ),
+        reason: 'Reuse the existing production and operation methods',
+      );
+      expect(
+        request,
+        allOf([
+          contains('H3'),
+          contains('已识别的渠道别名'),
+          contains('minimax-h3-prompts.md'),
+          contains('实际绑定输入'),
+          contains('未选模型且未指定目标时，也加载 minimax-h3-prompts.md，默认按 H3 格式写草稿'),
+          contains('不自动填写供应商或模型'),
+          contains('不声称配置就绪'),
+          matches(r'已选或明确指定的非 H3 模型.*对应格式.*不擅自切换'),
+          isNot(contains('按其中的 Shot 格式逐镜头编写')),
+        ]),
+        reason: 'Default only the draft format, never override another model',
+      );
+      expect(
+        request,
+        allOf(
+          contains('每个可独立生成的视频片段优先约 5 秒'),
+          contains('不是场次或每行对白的硬性配额'),
+          contains('合法时长'),
+          contains('逐字对白、完整动作阶段和前后连续性'),
+          contains('合理切点拆开或说明延长原因'),
+          contains('不加速、删戏、重演动作或机械逐行切分'),
+        ),
+        reason: 'Short clips remain subordinate to complete dramatic content',
+      );
+      expect(
+        request,
+        allOf([
+          matches(r'真实输出 fps.*帧数约束.*已知时'),
+          matches(r'换算帧数与时间.*切点.*计划总长'),
+          contains('未知标明未校准'),
+          contains('输入或时间轴 fps 不等于输出 fps'),
+          contains('不猜固定帧率、帧数或步长'),
+          contains('合法整秒提交'),
+          matches(r'不兼容时说明差异.*不写不受支持的小数秒'),
+          matches(r'不声称 API.*传递帧数或控制精确帧'),
+        ]),
+        reason: 'Frame arithmetic is evidence-based planning, not API control',
+      );
+      expect(
+        request,
+        allOf(
+          contains('保留原剧本文本和未改内容'),
+          contains('复用已有同内容条目及真实引用，不重复新增'),
+          contains('关联本场'),
+          contains('回读核对场次归属、顺序、计划时长和相邻起止状态'),
+          contains('只做拆分草稿，不自动生成媒体'),
+        ),
+        reason: 'Protect source material and read back only the scoped drafts',
+      );
+    }
+    await tester.ensureVisible(splitButtons.first);
+    // Restore the original no-action fixture for its narrow-layout regression.
+    sceneActions.value = null;
+    await tester.pumpAndSettle();
+    expect(splitButtons, findsNothing);
+    expect(
+      (await db.select(db.productionClips).get()).map((row) => row.toJson()),
+      clipsBeforeSplit,
+    );
     await service.apply(shot.id, {...service.snapshot(shot), 'title': '雨中的门灯'});
     await tester.pumpAndSettle();
     expect(find.text('雨中的门灯'), findsOneWidget);
