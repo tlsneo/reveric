@@ -7,3 +7,4 @@
 {"file":".trellis/tasks/10-27-screenplay-scene-planning/research/scene-planning.md","reason":"Source-backed ownership, exact upstream gaps, scope and acceptance examples."}
 {"file":".trellis/tasks/10-27-screenplay-scene-planning/research/official-skill-maintenance.md","reason":"Release evidence blocker, fingerprint algorithm, loading/override semantics and snapshot maintenance limits."}
 {"file": ".trellis/tasks/10-27-screenplay-scene-planning/research/adaptation-entry.md", "reason": "Current create/save behavior and revised integrated adaptation scope; old instruction-only plan is superseded."}
+{"file": ".trellis/tasks/10-27-screenplay-scene-planning/research/writing-resource-followup.md", "reason": "Approved v3 source gaps, eight-file boundary, ownership preservation and neutral follow-up cases; no runtime diagnosis."}

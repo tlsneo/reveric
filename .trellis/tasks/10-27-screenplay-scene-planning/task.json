@@ -21,6 +21,6 @@
   "children": [],
   "parent": null,
   "relatedFiles": [],
-  "notes": "User explicitly approved v2 exception and implementation. Eight product files implemented and independently checked; 83 serial tests passed, targeted analyze clean. See verification.md. No business DB/model calls. Awaiting commit confirmation; not archived.",
+  "notes": "v2 completed and committed as 12b0f95 with 83 serial tests. User approved v3 follow-up after reviewing scope, explicit version exception and existing location association support. Implement function-preserving craft/long-chat routing, purposeful prop criteria and verifiable resource delivery within eight product files. gpt-6.1-sol for all delegates; auto-commit after validation, no push. No business DB, media or paid application model calls. v3 implementation and independent gpt-6.1-sol review complete: 87 serial tests passed, analyzer/format/hash/preservation checks passed, no review fixes needed. V3-A-V3-E cover instruction/loading contracts only; actual model quality, installed upgrade and extraction remain unverified. Scoped work commit includes final verification records; no push or archive.",
   "meta": {}
 }

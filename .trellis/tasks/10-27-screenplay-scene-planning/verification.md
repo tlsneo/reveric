@@ -1,5 +1,58 @@
 # Implementation verification
 
+## v3 follow-up — implementation and independent verification complete
+
+User approved v3 and the scoped follow-up after the existing location association was verified in storage, AI create/update/read tools and the shared desktop/mobile scene-properties form. Implementation agent `0e124703-ea19-4ca` used explicit `gpt-6.1-sol`; independent review agent `cd39f57b-31ab-452` uses the same explicitly selected model. Prior v2 test totals below do not count as v3 acceptance.
+
+Current scope: five existing references, official metadata and two existing test files. No business data, app-model call, tool schema/description, UI, runtime or sync implementation change. Source-supported changes concern two closed prop criteria, craft-method reachability, same-pass saved-body reconciliation and verifiable resource delivery. The user's actual missing-resource execution cause remains unverified.
+
+### v3 RED → GREEN evidence
+
+Parent inspected the actual eight-file product diff and complete-log result/failure excerpts. All Flutter commands ran serially with `timeout 240 fvm flutter test --no-pub --concurrency=1 <file>`, redirecting full output before inspection.
+
+| Stage / test file under `test/shared/services/` | Result | Log under `/tmp/` |
+| --- | --- | --- |
+| RED `bundled_official_skills_test.dart` | exit 1; 12 passed, 3 failed | `reveric-screenplay-v3-red-official.log` |
+| RED `bundled_control_skills_test.dart` | exit 1; 23 passed, 2 failed | `reveric-screenplay-v3-red-control.log` |
+| GREEN `bundled_official_skills_test.dart` | exit 0; 15 passed | `reveric-screenplay-v3-green-official.log` |
+| GREEN `bundled_control_skills_test.dart` | exit 0; 25 passed | `reveric-screenplay-v3-green-control.log` |
+| GREEN `official_skill_sync_test.dart` | exit 0; 15 passed | `reveric-screenplay-v3-green-sync.log` |
+| GREEN `ai/prompt_tool_guidelines_test.dart` | exit 0; 32 passed | `reveric-screenplay-v3-green-prompts.log` |
+
+Total GREEN: **87 tests**. RED on unchanged v2 assets found two new official instruction gaps (source-function/craft routing and open prop criteria), two bundled gaps (resource delivery evidence and saved-body reconciliation), plus the expected version 2-versus-3 mismatch. The five scoped reference edits and approved metadata update resolve these failures; no failed assertions were removed.
+
+Additional implementation checks, exit 0:
+- `fvm flutter analyze --no-pub lib/shared/services/bundled_official_skills.dart test/shared/services/bundled_official_skills_test.dart test/shared/services/bundled_control_skills_test.dart test/shared/services/official_skill_sync_test.dart test/shared/services/ai/prompt_tool_guidelines_test.dart`: no issues (`/tmp/reveric-screenplay-v3-analyze.log`).
+- `fvm dart format --output=none --set-exit-if-changed lib/shared/services/bundled_official_skills.dart test/shared/services/bundled_official_skills_test.dart test/shared/services/bundled_control_skills_test.dart`: three files, zero changes (`/tmp/reveric-screenplay-v3-format.log`).
+- `git diff --check`: passed (`/tmp/reveric-screenplay-v3-diff-check.log`).
+- Dart LSP unavailable; CLI analysis is the available static check, not a substitute claim of device execution.
+
+### v3 independent final review
+
+Independent `gpt-6.1-sol` reviewer found no remaining in-scope issue and made no file edits. It read full affected references and direct callers/operation/loader/sync contracts and reran all four suites serially: **15 + 25 + 15 + 32 = 87 passed**, each exit 0. Full final logs: `/tmp/reveric-screenplay-v3-check-{official,control,sync,prompts}.log`. Targeted analysis of the same five Dart files passed (`/tmp/reveric-screenplay-v3-check-analyze.log`); the three changed Dart files passed format verification, zero changes. `git diff --check` passed. All three changed Dart files lacked a configured Dart LSP; no LSP-success claim is made.
+
+Parent retrieved the full review, inspected final test/analyzer log endings and independently recomputed the 15-reference hash. Both complete original parenthetical bullets and the full original timing paragraph were checked against HEAD and remain exact. The review also verified unchanged caller-prepares-or-authorizes, quiet-scene and local-ID clauses, unchanged main Skill/15-reference manifest and unchanged other 12 official references. Product scope remains exactly the eight approved files.
+
+Final registered metadata: **version 3**, hash `b04aea179a1f8003914defb4c52835bdf3d8bcc642141c80800a412d2ed9b0fe`, updatedAt `2026-10-27T11:02:03-04:00`. Version increase uses explicit user approval, not inferred publication state. Existing sync/override/runtime code is unchanged.
+
+V3-A–V3-E are satisfied at instruction/loading/contract level. No unexpected implementation/check failure required a fix; the only failing runs were the deliberate RED regressions above. This work does not prove the reported missing-location execution cause or improved screenplay quality. Task stays in_progress; archive, PR/base-branch resolution and push are not part of this iteration.
+
+### v3 neutral cases — static instruction review only
+
+- Long screen exchange: ordinary scene writing explicitly routes to existing scene/dialogue craft, retains causal words/order/time and allows selective compression; not automatically VO/in-person dialogue.
+- Known/repeated versus ambiguous locations: the operational guide distinguishes actual location records, scene references and prose; same-place reuse does not require invented layout/photos, while uncertain identity stays pending.
+- Authorized newly introduced receipt: saved-body resources absent from the prewrite list enter the existing authorized chronicler reconciliation, with source scene and real resource paths; they are not mislabeled as source facts.
+- Writer/caller/chronicler permissions: the original caller-prepares-or-explicitly-authorizes clause remains; preview, planning-only and no-delegation cases do not authorize extra writes. Planned purchases or candidate objects do not establish current possession.
+- Purposeful slow scenes: quiet aftermath, effective long messages and legitimate standalone parenthetical reactions remain permitted; no conflict, reaction or duration quota was introduced.
+
+These are instruction coverage judgments, not model executions or successful extraction results.
+
+### v3 spec-review decision
+
+Reviewed `trellis-update-spec` and current spec/rule owners. No new API/schema/runtime convention is being added. Existing `.agents/rules/agent-skills.md` already owns method-vs-operation placement and the limits of static instruction tests; `tools_path.md` owns real identities/paths. Put the functional writing/resource criteria in the actual Skills and the evidence in this task, rather than duplicate them as a permanent development spec. Revisit only if independent checking uncovers a genuinely new contract.
+
+## Historical v2 verification
+
 ## Authorization and scope
 
 Latest user reply “同意啊” explicitly approves both the v1 → v2 exception and implementation. No tag-based publication claim is made. Prior premature edits were rolled back; only checks after the approved implementation are final acceptance evidence.
@@ -62,7 +115,7 @@ The implemented instructions and static/loading checks cover AC0–AC9: input di
 
 ### Delivery state
 
-Implementation and deterministic validation complete. No commit or push has been made; commit confirmation and task archival remain separate workflow steps. The task remains in_progress pending delivery bookkeeping.
+v2 implementation and deterministic validation completed and committed as `12b0f95`; no push. The task remains in_progress for the approved v3 iteration; archival is not part of this follow-up.
 
 ## Unverified
 

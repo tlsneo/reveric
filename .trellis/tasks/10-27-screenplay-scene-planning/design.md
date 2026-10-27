@@ -1,6 +1,25 @@
 # Skill proposal — diagnose and organize supplied material
 
-## Status and scope
+## Current iteration: approved v3 follow-up
+
+The v2 implementation below shipped in commit `12b0f95`. The user has now approved the v3 follow-up after reviewing its scope and verifying that actual location linkage already exists. This section governs this iteration; historical v1 → v2 metadata instructions below are not the current version target.
+
+Source-backed gaps and exact preservation boundaries are recorded in `research/writing-resource-followup.md`. Two closed prop-selection criteria exclude important action/information carriers too narrowly; long-chat handling is only conditionally routed to existing dialogue craft. The actual application's extraction failure has not been reproduced: no tool trace, installed snapshot or DB evidence is available. Improve method reachability and checkable delivery, not guessed runtime code.
+
+Smallest change boundary (five existing references, registry, and two existing test files; eight product files total):
+
+1. `assets/official_skills/screenplay-writing/references/scene-writing.md`: before/after comparison of required character/causal/emotional functions using existing adaptation-decisions and scene-craft links; explicit long-dialogue/screen-text trigger and compact presentation criteria; authorized handoff of newly introduced important resources; bounded continuity/self-check. Preserve all mature timing, quiet-scene, permission and local-edit clauses.
+2. `references/source-analysis.md` and `references/adaptation-decisions.md` under the same Skill: replace both exclusionary prop criteria with consistent functional, non-exhaustive criteria. Identity/attribute uncertainty, existing media and selective extraction remain intact.
+3. `assets/bundled_skills/screenplay-tools/references/screenplay.md`: own the conditional operational check for authorized full organization—real resource existence, actual `location_id`/cast references, item evidence and explicit incomplete/unverified outcomes. Do not copy schemas or add props fields. Preserve parenthetical examples exactly.
+4. `assets/bundled_skills/story-continuity/references/screenplay.md`: same-pass reconciliation from actual saved正文 includes important resources not present on the prewrite list; use existing authorized chronicler process and report unresolved references to the caller, not silent body edits or auto-expanded access.
+5. `lib/shared/services/bundled_official_skills.dart`: v3, exact current hash and timestamp under explicit user approval. No sync/installation implementation changes and no Debug/Release DB access.
+6. `test/shared/services/bundled_official_skills_test.dart` and `test/shared/services/bundled_control_skills_test.dart`: protect reachability, functional prop criteria, real-resource readback and permission/preview boundaries through actual asset loaders. Static contract guards do not simulate or prove model creativity/extraction.
+
+Stable existing main Skill discovery, 15-reference manifest, general Agent/Writer prompts, location services/tool implementations, and existing entity ownership are sufficient; do not change them. No new files in production, UI, schemas, tool descriptions, model configuration, framework, media generation or Story2Board integration. The only new file is the task research artifact. Desktop and mobile consume the shared Skill/operations; verified both already use the shared location picker and scene-heading location storage.
+
+Validation: add tests before product edits and record the expected failing assertions, then run the four narrow suites serially with pinned FVM/no-pub and timeouts. Verify all actual diffs plus neutral scenarios in research, then independent gpt-6.1-sol review. No app rewrite, paid/live inference or claims of improved model output. Rollback is a cohesive content/metadata/test revert before deployment; never downgrade installed business data.
+
+## Historical v2 status and scope
 
 The user now explicitly asks for better skills so AI can analyze whatever narrative material is pasted and organize it well. This supports a skill/method-first proposal, not a source-work selector or new UI. Paste-surface identification is not a blocker for the current method design. The user approved the selective-adaptation recommendation after external research. Product direction, the explicit v1 → v2 exception, and implementation are approved by the latest user reply “同意啊”. There are no remaining product decisions. This is one cohesive skill enhancement.
 

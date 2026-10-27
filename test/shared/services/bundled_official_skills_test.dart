@@ -164,7 +164,7 @@ void main() {
           reference.path: reference.content,
       };
 
-      expect(detail.version, 2);
+      expect(detail.version, 3);
       expect(detail.whenToUse, contains('混合草稿'));
       expect(detail.prompt, contains('用户粘贴内容'));
       expect(detail.prompt, contains('不要求用户先分类'));
@@ -196,6 +196,55 @@ void main() {
         references['references/scene-writing.md'],
         contains('不因要求写正文就默认授权修改资料'),
       );
+    },
+  );
+
+  test(
+    'scene writing routes long exchanges and preserves source functions',
+    () async {
+      final detail = await loader.get(bundle, '剧本写作');
+      final scene = detail.references
+          .singleWhere((ref) => ref.path == 'references/scene-writing.md')
+          .content;
+      expect(scene, contains('人物辨识度与能力、选择动机、情绪积累和观众获知时机'));
+      expect(scene, contains('[改编取舍](adaptation-decisions.md)'));
+      expect(scene, contains('长对话、屏幕聊天占主体或同功能问答反复时'));
+      expect(
+        scene,
+        contains('读取 [场景手艺](scene-craft.md) 和 [对白修订](dialogue.md)'),
+      );
+      expect(scene, contains('按信息、策略、关系或行动机会的变化组织交流'));
+      expect(scene, contains('关键措辞、发送顺序、时间戳和误读依据'));
+      expect(scene, contains('不默认改成现场口述或画外音'));
+      expect(scene, contains('有功能的慢场和有效长消息'));
+      expect(scene, contains('意外空正文或重复正文'));
+      expect(scene, contains('相对日期'));
+      expect(scene, contains('新增且需追踪的重要人物、地点和物件'));
+      expect(scene, contains('实际场次路径交调用方'));
+      expect(scene, contains('不因此扩大写手权限'));
+      expect(scene, contains('不因要求写正文就默认授权修改资料'));
+      expect(scene, contains('不硬造对手'));
+      expect(scene, contains('保留未改元素 ID'));
+      expect(scene, contains('区分发声、独占动作与可重叠部分'));
+    },
+  );
+
+  test(
+    'prop selection follows function rather than a closed evidence list',
+    () async {
+      final detail = await loader.get(bundle, '剧本写作');
+      for (final path in ['source-analysis.md', 'adaptation-decisions.md']) {
+        final content = detail.references
+            .singleWhere((ref) => ref.path == 'references/$path')
+            .content;
+        expect(content, contains('重要行动、关键操作、信息呈现或传递、人物能力或选择'));
+        expect(content, contains('需要识别、复用或连续追踪'));
+        expect(content, contains('普通物件不因日常而排除'));
+        expect(content, contains('不把所有名词建档'));
+        expect(content, contains('计划或提及的候选不证明已持有或使用'));
+        expect(content, isNot(contains('只有承担证据')));
+        expect(content, isNot(contains('道具只追踪')));
+      }
     },
   );
 

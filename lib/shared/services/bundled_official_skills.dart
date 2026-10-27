@@ -178,11 +178,11 @@ const List<BundledOfficialSkillSpec> bundledOfficialSkillSpecs = [
       'assets/official_skills/screenplay-writing/references/series-continuity.md',
       'assets/official_skills/screenplay-writing/references/source-analysis.md',
     ],
-    version: 2,
+    version: 3,
     contentHash:
-        'b659aadf6388121b99a1aecc363ddd4e3262945655853499552603f7472feb81',
+        'b04aea179a1f8003914defb4c52835bdf3d8bcc642141c80800a412d2ed9b0fe',
     sortOrder: 10,
-    updatedAt: '2026-10-27T09:44:39-04:00',
+    updatedAt: '2026-10-27T11:02:03-04:00',
   ),
   BundledOfficialSkillSpec(
     name: '地图设计指南',

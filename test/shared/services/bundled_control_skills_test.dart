@@ -395,6 +395,48 @@ void main() {
     },
   );
 
+  test(
+    'full screenplay delivery checks records, references and saved body',
+    () async {
+      final skill = (await loader.findByCallName(bundle, '剧本工具使用规范'))!;
+      final guide = skill.references
+          .singleWhere((ref) => ref.path == 'references/screenplay.md')
+          .content;
+      expect(guide, contains('正式整理且本次授权包含资料交付时'));
+      expect(guide, contains('人物、地点和道具的实际创建或复用记录'));
+      expect(guide, contains('`location_id`、`/cast` 与实际正文'));
+      expect(guide, contains('地点名只出现在梗概或动作中，不等于地点已建档或场次已关联'));
+      expect(guide, contains('地点身份足以区分时即可创建或复用'));
+      expect(guide, contains('无需编造照片、外观或布局'));
+      expect(guide, contains('无需单独建档及理由、待补、失败或未核对'));
+      expect(guide, contains('没有回读证据不得报告已完成'));
+      expect(guide, contains('不把规划草稿的可空地点、名单或正文改成全局必填'));
+      expect(guide, contains('现有 `items`'));
+      expect(guide, contains('可以单独表示无台词反应'));
+      expect(guide, contains('文本中不要自行加括号'));
+    },
+  );
+
+  test(
+    'continuity reconciles new saved-body resources within existing authority',
+    () async {
+      final skill = (await loader.findByCallName(bundle, '故事连续性维护'))!;
+      final guide = skill.references
+          .singleWhere((ref) => ref.path == 'references/screenplay.md')
+          .content;
+      expect(guide, contains('实际已保存正文中新增的重要人物、地点和物件'));
+      expect(guide, contains('不能只复核写前清单'));
+      expect(guide, contains('同次按授权先查后补'));
+      expect(guide, contains('真实资源 ID/路径、来源场次与待补项'));
+      expect(guide, contains('不因资料补漏取得正文或场次引用的改写权限'));
+      expect(guide, contains('未解决项交调用方'));
+      expect(guide, contains('用户不委派或限制自动整理时遵从'));
+      expect(guide, contains('讨论或预览不写入'));
+      expect(guide, contains('计划或候选不当作已发生或已持有的事实'));
+      expect(guide, contains('不根据尚未写入正文的大纲或梗概编造事件'));
+    },
+  );
+
   test('every bundled file is registered and relative links resolve', () async {
     final skills = await loader.loadAll(bundle);
     final registered = <String>{};

@@ -1,6 +1,24 @@
 # Skill-first execution plan — approved
 
-## Planning gate
+## Current v3 iteration — approved
+
+The user approved v3 and implementation after verifying the existing location-reference capability. Previous v2 work is committed as `12b0f95`; commands/counts below are historical, not v3 verification. No additional product/version question is pending. All delegated agents use `gpt-6.1-sol` explicitly. Scope is the eight product files listed in the current design, plus task records; preserve other files and user data.
+
+1. [x] Read current manifests, PRD/design and `research/writing-resource-followup.md`; inspect complete target files, callers and tests. Preserve original detailed craft, permissions and examples. Confirm source gaps rather than asserting a runtime diagnosis.
+2. [x] Add narrow loaded-instruction regression guards in the existing official/control test files before touching assets; run affected tests serially on current v2 assets and record expected RED. These tests prove instruction contracts, not extraction or writing quality.
+3. [x] Make targeted edits to the five references: function-preserving adaptation + applicable chat/dialogue routing; both prop-selection predicates; real entity/location-reference checks; saved-body new-resource handoff within existing chronicler ownership. No schema/UI/generic Agent prompt or tool-description changes.
+4. [x] Set only screenplay-writing metadata to v3, recompute sorted-reference SHA-256, update current timestamp; keep the 15-reference manifest and all other skill metadata unchanged. Do not touch any business or installed-skill database.
+5. [x] Run official and control suites, sync and prompt-guideline suites serially with `timeout 240 fvm flutter test --no-pub --concurrency=1`; write complete logs before summarizing. Run narrow analyze, format and diff checks; attempt LSP diagnostics for modified Dart files and report unavailable honestly.
+6. [x] Parent verifies actual diff and logs, then dispatches independent `trellis-check` on gpt-6.1-sol to check the whole iteration and fix within scope. Re-run affected checks after fixes. Record findings and neutral scenario review separately from unrun live/model validation.
+7. [x] Update verification/task status and perform spec-review judgment; prepare the scoped work commit after final checks, no push/amend. Do not archive the active task or invent a PR/base branch resolution.
+
+Final evidence: implementation and independent check both ran all 87 tests successfully; analyzer/format/diff passed. Reviewer made no fixes. Parent verified final logs, hash and exact preserved examples/timing. V3-A–V3-E are instruction-level acceptance only; no live extraction or model-quality run. See verification.md. This checklist is included in the scoped work commit; the commit hash is recorded by Git and reported at delivery.
+
+Logs: use `/tmp/reveric-screenplay-v3-*` and record exact exit/count results. No codegen is required. Existing source/agent contract changes do not authorize model calls or rewriting the user's current episode.
+
+## Historical v2 plan
+
+## Historical planning gate
 
 The user explicitly approved the v1 → v2 maintenance exception and implementation with “同意啊”. The product scope and method comparison are already approved. Validate manifests, start this task, implement and check. No further product confirmation is needed. Do not infer publication state from missing tags, modify business data, or make paid model calls.
 
