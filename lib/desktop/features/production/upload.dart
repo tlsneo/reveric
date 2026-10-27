@@ -1,8 +1,9 @@
-// 职责: 将制片导入入口统一导入去重资产库，允许直接采用导入或资产库中的结果，并另存采用的结果。
+// 职责: 统一制片的文件导入、已有素材与角色图片选择、采用结果和导出入口。
 // 关联文件:
 //   lib/shared/services/production/library_service.dart
 //   lib/shared/services/production/canvas_service.dart
 //   lib/desktop/features/production/popover.dart
+//   lib/desktop/features/production/character_image_picker.dart
 //   lib/shared/localization/locale_keys.dart
 //   assets/translations/en/common.json
 //   assets/translations/zh-CN/common.json
@@ -22,6 +23,7 @@ import '../../../shared/localization/locale_keys.dart';
 import '../../../shared/services/production/canvas_service.dart';
 import '../../../shared/services/production/ffmpeg_runner.dart';
 import '../../../shared/theme/theme.dart';
+import 'character_image_picker.dart';
 import 'popover.dart';
 import 'support.dart';
 
@@ -58,7 +60,7 @@ Future<AssetRow?> uploadProductionAsset(
   return asset;
 }
 
-/// 输入框底栏的「＋」：向上展开「导入 / 从资产库选择」，选中的素材交给 [onPicked] 补成一条输入。
+/// 输入框底栏的「＋」：导入或选择已有资产、角色图片，交给 [onPicked] 补成一条输入。
 class ProductionAddInputButton extends StatelessWidget {
   const ProductionAddInputButton({
     super.key,
@@ -73,19 +75,13 @@ class ProductionAddInputButton extends StatelessWidget {
   final bool enabled;
   @override
   Widget build(BuildContext context) {
-    Future<void> choose(bool upload) => productionRun(context, () async {
-      final asset = upload
-          ? await uploadProductionAsset(context, service, types)
-          : await pickProductionAsset(
-              context,
-              service,
-              types: types,
-              confirmLabel: context.t(LocaleKeys.productionAddInput),
-            );
-      if (asset != null && context.mounted) {
-        await onPicked(asset);
-      }
-    });
+    Future<void> choose(Future<AssetRow?> Function() pick) =>
+        productionRun(context, () async {
+          final asset = await pick();
+          if (asset != null && context.mounted) {
+            await onPicked(asset);
+          }
+        });
     return RevericPopover(
       up: true,
       trigger: (_, open, toggle) => ProductionToolButton(
@@ -104,7 +100,7 @@ class ProductionAddInputButton extends StatelessWidget {
               label: context.t(LocaleKeys.commonImport),
               onTap: () {
                 close();
-                choose(true);
+                choose(() => uploadProductionAsset(context, service, types));
               },
             ),
             ProductionPopoverItem(
@@ -112,9 +108,25 @@ class ProductionAddInputButton extends StatelessWidget {
               label: context.t(LocaleKeys.productionPickLibrary),
               onTap: () {
                 close();
-                choose(false);
+                choose(
+                  () => pickProductionAsset(
+                    context,
+                    service,
+                    types: types,
+                    confirmLabel: context.t(LocaleKeys.productionAddInput),
+                  ),
+                );
               },
             ),
+            if (types.contains('image'))
+              ProductionPopoverItem(
+                icon: RevericIcons.person,
+                label: context.t(LocaleKeys.productionPickCharacter),
+                onTap: () {
+                  close();
+                  choose(() => pickProductionCharacterImage(context, service));
+                },
+              ),
           ],
         ),
       ),

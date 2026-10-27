@@ -39,6 +39,7 @@ import '../../../shared/services/production/canvas_service.dart';
 import '../../../shared/theme/theme.dart';
 import '../canvas/widgets/glass.dart';
 import '../storyboard/edit_form.dart' show ShotField;
+import 'character_image_picker.dart';
 import 'edit_session.dart';
 import 'image_submit.dart';
 import 'input_preview.dart';
@@ -302,12 +303,10 @@ class _ImageForm extends HookConsumerWidget {
       }
     }
 
-    Future<void> pickReference() async {
-      final asset = await pickProductionAsset(
-        context,
-        service,
-        types: {'image'},
-      );
+    Future<void> pickReference({bool fromCharacter = false}) async {
+      final asset = fromCharacter
+          ? await pickProductionCharacterImage(context, service)
+          : await pickProductionAsset(context, service, types: {'image'});
       if (asset != null && context.mounted) {
         await attach(asset, reference: true);
       }
@@ -342,6 +341,14 @@ class _ImageForm extends HookConsumerWidget {
           RevericMenuItem(
             label: context.t(LocaleKeys.productionAssets),
             onTap: () => productionRun(context, pickReference),
+          ),
+          RevericMenuItem(
+            icon: RevericIcons.person,
+            label: context.t(LocaleKeys.productionPickCharacter),
+            onTap: () => productionRun(
+              context,
+              () => pickReference(fromCharacter: true),
+            ),
           ),
         ],
       );

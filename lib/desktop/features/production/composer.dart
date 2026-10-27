@@ -45,6 +45,7 @@ import '../storyboard/edit_form.dart' show ShotField;
 import 'prompt_controller.dart';
 import 'input_preview.dart';
 import 'character_input.dart';
+import 'character_image_picker.dart';
 import '../../../shared/services/production/voices.dart';
 import 'edit_session.dart';
 import 'prompt_field.dart';
@@ -369,13 +370,15 @@ class _ComposerForm extends HookConsumerWidget {
       }
     }
 
-    Future<void> pickReference() async {
-      final asset = await pickProductionAsset(
-        context,
-        service,
-        types: currentRoles().map((r) => r.kind.name).toSet(),
-        confirmLabel: context.t(LocaleKeys.productionAddInput),
-      );
+    Future<void> pickReference({bool fromCharacter = false}) async {
+      final asset = fromCharacter
+          ? await pickProductionCharacterImage(context, service)
+          : await pickProductionAsset(
+              context,
+              service,
+              types: currentRoles().map((r) => r.kind.name).toSet(),
+              confirmLabel: context.t(LocaleKeys.productionAddInput),
+            );
       if (asset != null && context.mounted) {
         await attach(asset, reference: true);
       }
@@ -405,10 +408,12 @@ class _ComposerForm extends HookConsumerWidget {
                   : labels[input.identity]!,
             ),
           ('library', context.t(LocaleKeys.productionAddInput)),
+          if (currentRoles().any((r) => r.kind == VideoMediaKind.image))
+            ('character', context.t(LocaleKeys.productionPickCharacter)),
         ],
         (selected) async {
-          if (selected == 'library') {
-            await pickReference();
+          if (selected == 'library' || selected == 'character') {
+            await pickReference(fromCharacter: selected == 'character');
             return;
           }
           final input = candidates.firstWhere((i) => i.identity == selected);

@@ -2220,6 +2220,7 @@ abstract final class LocaleKeys {
   static const productionSpecTooltip = 'screenplay.production_spec_tooltip';
   static const productionAddInputHint = 'screenplay.production_add_input_hint';
   static const productionPickLibrary = 'screenplay.production_pick_library';
+  static const productionPickCharacter = 'screenplay.production.pickCharacter';
   static const productionResultsTitle = 'screenplay.production_results_title';
   static const productionResultsSummary =
       'screenplay.production_results_summary';
