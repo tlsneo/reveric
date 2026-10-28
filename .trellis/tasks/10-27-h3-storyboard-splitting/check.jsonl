@@ -1,9 +1,9 @@
-{"file":"AGENTS.md","reason":"核对用户批准的 v1→v2、三个产品文件、gpt-6.1-sol、无业务数据库/收费调用及共享平台边界"}
-{"file":".trellis/spec/backend/index.md","reason":"共享资源和元数据所属层；不把占位 spec 当实现规范"}
-{"file":".agents/rules/code-style.md","reason":"检查两个既有 Dart 文件的最小改动与风格"}
-{"file":".agents/rules/ai-calling.md","reason":"不改现有 Agent 调用、工具 description/schema 或生成协议"}
-{"file":".agents/rules/agent-skills.md","reason":"H3 附件拥有格式、v2/hash/日期一致，不覆盖用户自定义或改变官方同步逻辑"}
-{"file":".agents/rules/testing.md","reason":"独立串行复验官方技能加载与同步整文件测试，保留守卫与完整失败日志"}
-{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"确认没有复制模板、设置项或不必要 helper"}
-{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"核对附件到打包加载与版本升级边界，不冒充实时 Agent 或设备验证"}
-{"file":".trellis/tasks/10-27-h3-storyboard-splitting/research/chinese-prompt-followup.md","reason":"第二轮中文适配的完整证据、最新授权和范围；防止按旧的两文件约束误审或扩到媒体绑定"}
+{"file":"AGENTS.md","reason":"核对第三轮五文件/版本例外/sol与禁止媒体、数据库、用户分镜改写的边界"}
+{"file":".trellis/spec/backend/index.md","reason":"共享资源与注册测试质量范围，不扩大到UI或原生布局"}
+{"file":".agents/rules/code-style.md","reason":"现有两Dart文件的局部测试和元数据，不引入抽象或弱化守卫"}
+{"file":".agents/rules/ai-calling.md","reason":"保持调用方式、工具说明和实际视频请求不变"}
+{"file":".agents/rules/agent-skills.md","reason":"核对主文/附件职责、v3/hash/date、原有身份、路径及本地自定义/停用行为"}
+{"file":".agents/rules/testing.md","reason":"独立串行加载/同步整文件回归，实际六段示例与拍法/时间检查，不做收费验证"}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"不照搬整套英文/动画流程，不重写既有H3语法或其他配方，保留现有方法"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"核对保存草稿、引用待绑、真实成稿、安装升级和生成结果互不冒充"}
+{"file":".trellis/tasks/10-27-h3-storyboard-splitting/research/h3-shot-quality-followup.md","reason":"最新用户批准范围与反例/六段教学例子/整秒时长/视域一致性验收，防止按旧轮误审"}

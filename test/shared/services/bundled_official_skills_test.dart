@@ -265,7 +265,7 @@ void main() {
     for (final obsolete in ['一段英文', '句英文', '英文词', '350–500']) {
       expect(h3, isNot(contains(obsolete)), reason: obsolete);
     }
-    expect(detail.version, 2);
+    expect(detail.version, 3);
     expect(h3, contains('中文适配'));
     expect(h3, contains('不代表中文与英文的成片质量等价'));
     expect(h3, contains('`summary`：用中文'));
@@ -409,6 +409,235 @@ void main() {
         contains('<Subject 3> — [Shot 1]、[Shot 2]、[Shot 3]，fully_preserved'),
         reason: 'Shot crops do not discard the defined room-reference role.',
       );
+    },
+  );
+
+  test(
+    'production requires a shootable plan before writing and readback',
+    () async {
+      final detail = await loader.get(bundle, '剧本制片');
+      final production = detail.references
+          .singleWhere((ref) => ref.path == 'references/production.md')
+          .content;
+      expect(
+        detail.prompt,
+        contains('原文事项 → 可拍镜头计划 → 按目标模型编写 → 逐 Shot 核对 → 保存回读'),
+      );
+      final split = production
+          .split('## 从场次拆分镜')
+          .last
+          .split('## 先把制作依赖排清楚')
+          .first;
+      var previous = -1;
+      for (final stage in ['可拍镜头计划', '按目标模型编写', '逐 Shot 核对', '回读']) {
+        final position = split.indexOf(stage);
+        expect(
+          position,
+          greaterThan(previous),
+          reason: 'Missing/out-of-order $stage',
+        );
+        previous = position;
+      }
+      for (final requirement in [
+        '观众',
+        '景别',
+        '机位',
+        '画内',
+        '起点',
+        '可见过程',
+        '停点',
+        '声音',
+        '约 5 秒',
+        '软偏好',
+        '合法整秒',
+        '逐字对白',
+        '已有同内容片段时原地修订',
+      ]) {
+        expect(split, contains(requirement), reason: requirement);
+      }
+      final review = production.split('## 写后核对').last.split('## 看结果再返修').first;
+      expect(review, contains('逐 Shot'));
+      expect(review, contains('画内'));
+      expect(review, contains('屏幕'));
+      expect(review, contains('duration_ms'));
+      expect(review, contains('草稿'));
+    },
+  );
+
+  test(
+    'explicit H3 full-reference target stays a draft until inputs are bound',
+    () async {
+      final detail = await loader.get(bundle, '剧本制片');
+      final production = detail.references
+          .singleWhere((ref) => ref.path == 'references/production.md')
+          .content;
+      expect(production, contains('[MiniMax H3 提示词](minimax-h3-prompts.md)'));
+      expect(production, contains('用户明确要求 H3 全参考'));
+      expect(production, contains('实际绑定'));
+      expect(production, contains('六字段'));
+      expect(production, contains('参考待绑定'));
+      expect(production, contains('完整可拍草稿'));
+      expect(production, contains('不伪造 input_id'));
+      expect(production, contains('不自动改成纯文生最终稿'));
+      expect(production, contains('交付说明'));
+      expect(production, contains('其他模型'));
+      expect(production, contains('正常的无参考、首帧和首尾帧模式'));
+      expect(production, contains('Shot N（…）'));
+      expect(production, contains('【0-5s】'));
+      expect(production, contains('不混入'));
+    },
+  );
+
+  test(
+    'screen-operation recipe has a timed six-field H3 prompt and visible ending',
+    () async {
+      final detail = await loader.get(bundle, '剧本制片');
+      final recipes = detail.references
+          .singleWhere((ref) => ref.path == 'references/shot-recipes.md')
+          .content;
+      expect(
+        RegExp(
+          r'^## [一二三四五]、(.+)$',
+          multiLine: true,
+        ).allMatches(recipes).map((match) => match.group(1)),
+        ['两人对白与跨切声音', '交接物件与持有关系', '遮挡揭示与运镜参考', '按实际尾部状态续拍', '屏幕与设备操作'],
+      );
+      final recipe = recipes.split('## 五、屏幕与设备操作').last;
+      expect(recipe, contains('反例'));
+      expect(recipe, contains('可拍计划'));
+      expect(recipe, contains('教学假设'));
+      expect(recipe, contains('不代表实际已绑定'));
+      expect(recipe, contains('替换'));
+      expect(recipe, contains('验收'));
+      final plan = recipe.split('### 可拍计划').last.split('### H3 全参考').first;
+      final acceptance = recipe.split('### 验收').last;
+      for (final section in [plan, acceptance]) {
+        expect(section, contains('母巢轮廓被炮火逐渐遮没'));
+        expect(section, contains('不另加母巢被摧毁'));
+      }
+      final total = RegExp(r'总长 (\d+) 秒').firstMatch(recipe);
+      expect(total, isNotNull);
+      final totalSeconds = int.parse(total!.group(1)!);
+      expect(totalSeconds, 8);
+      final prompt = RegExp(
+        r'```text\n(subject_definitions:[\s\S]*?)\n```',
+      ).firstMatch(recipe)?.group(1);
+      expect(
+        prompt,
+        isNotNull,
+        reason: 'Needs a complete H3 example, not a plot summary.',
+      );
+      final fields = RegExp(
+        r'^([a-z_]+): ',
+        multiLine: true,
+      ).allMatches(prompt!).toList();
+      expect(fields.map((field) => field.group(1)), [
+        'subject_definitions',
+        'summary',
+        'retention_analysis',
+        'detailed_description',
+        'overall_soundscape',
+        'non_diegetic_music',
+      ]);
+      for (var i = 0; i < fields.length; i++) {
+        final end = i + 1 < fields.length ? fields[i + 1].start : prompt.length;
+        final body = prompt.substring(fields[i].end, end).trim();
+        expect(
+          body == 'N/A' || RegExp(r'[\u4e00-\u9fff]').hasMatch(body),
+          isTrue,
+        );
+      }
+      final summary = prompt.substring(fields[1].end, fields[2].start);
+      expect(summary, contains('母巢轮廓被炮火逐渐遮没'));
+      final definitions = prompt.substring(fields[0].end, fields[1].start);
+      final defined = RegExp(
+        r'<Subject \d+>',
+      ).allMatches(definitions).map((match) => match.group(0)).toSet();
+      expect(defined, {'<Subject 1>', '<Subject 2>', '<Subject 3>'});
+      expect(
+        RegExp(
+          r'<Subject \d+>',
+        ).allMatches(prompt).map((match) => match.group(0)).toSet(),
+        defined,
+      );
+      expect(
+        RegExp(r'<ref input_id="…" label="[^"]+" />').allMatches(definitions),
+        hasLength(3),
+      );
+      final retention = prompt.substring(fields[2].end, fields[3].start);
+      expect(
+        retention,
+        contains('<Subject 3> — [Shot 1]、[Shot 2]、[Shot 3]，fully_preserved'),
+        reason:
+            'Cropping does not discard the defined desk/light/material role.',
+      );
+      expect(
+        retention,
+        contains('<Subject 2> — [Shot 1]、[Shot 3]，partially_preserved'),
+        reason: 'The game state changes rather than freezing its reference.',
+      );
+      final description = prompt.substring(fields[3].end, fields[4].start);
+      final cuts = RegExp(
+        r'\[Shot (\d+)\] At (\d{2}):(\d{2})\.(\d{3}), the camera cuts to ',
+      ).allMatches(description).toList();
+      expect(cuts.map((cut) => cut.group(1)), ['2', '3']);
+      final times = cuts
+          .map(
+            (cut) =>
+                int.parse(cut.group(2)!) * 60 +
+                int.parse(cut.group(3)!) +
+                int.parse(cut.group(4)!) / 1000,
+          )
+          .toList();
+      expect(times, [3.0, 6.0]);
+      var previous = 0.0;
+      for (final time in times) {
+        expect(time, greaterThan(previous));
+        expect(time, lessThan(totalSeconds));
+        previous = time;
+      }
+      final shots = [
+        description.substring(0, cuts[0].start),
+        description.substring(cuts[0].end, cuts[1].start),
+        description.substring(cuts[1].end),
+      ];
+      expect(shots[0], contains('[Shot 1]'));
+      for (final visible in ['屏幕', '特写', '边框', '显示区域', '十二艘人类巡洋舰', '虫族母巢']) {
+        expect(shots[0], contains(visible));
+      }
+      final barrage = shots[0].indexOf('持续集火');
+      final obscuredBase = shots[0].indexOf('母巢轮廓被炮火逐渐遮没');
+      expect(barrage, greaterThanOrEqualTo(0));
+      expect(obscuredBase, greaterThan(barrage));
+      for (final operation in [
+        '手部',
+        '键盘',
+        'TrackPoint',
+        'G、H、B',
+        '输入',
+        '"GG"',
+      ]) {
+        expect(shots[1], contains(operation));
+      }
+      for (final ending in ['屏幕', '可读', '"GG"', '游戏结束', '保持']) {
+        expect(shots[2], contains(ending));
+      }
+      for (final forbidden in [
+        'Shot 1（',
+        '【0-5s】',
+        '首帧：',
+        '结束状态：',
+        '可拍计划',
+        '验收',
+        '待绑定',
+        'Enter',
+        '<d>',
+        '(S1)',
+      ]) {
+        expect(prompt, isNot(contains(forbidden)), reason: forbidden);
+      }
+      expect(recipe, contains('精确'));
+      expect(recipe, contains('不保证'));
     },
   );
 

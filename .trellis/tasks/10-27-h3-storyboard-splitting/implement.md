@@ -1,5 +1,7 @@
 # 实施与验收
 
+> 当前仅执行末尾第三轮五文件范围；前两轮已提交，不重复实施。用户已批准官方 H3 写作要求融入现有中文 Skill，并批准本轮 v2→v3。
+
 ## 第一轮已批准并完成的范围
 
 用户已批准：只改 AI 拆分镜；未选模型时默认 H3 提示词格式，已明确选其他型号时保留对应格式；约 5 秒片段；已知 fps 才校核；不新增选择器、不自动配置或生成。只允许改 `lib/desktop/features/storyboard/region.dart` 与 `test/desktop/features/storyboard/region_test.dart` 两个产品文件，另可更新本任务记录。
@@ -63,3 +65,27 @@ git diff --check
 ```
 
 以上命令已由实施子代理串行执行；独立检查使用 `/tmp/reveric-h3-chinese-check-{official,sync,analyze,format,diff}.log` 再次串行通过，主会话已核对最终三文件 diff、报告和日志。验收详情见 `verification.md` 第二轮与 `research/chinese-check-result.md`。测试只能验证打包文本、加载、内容指纹和已有升级行为，不能证明远程 Agent 一定输出中文、中文成片质量或用户设备上的实际安装状态。
+
+## 第三轮：可拍分镜与全参考成稿（当前实施）
+
+具体合同与五文件范围见 `research/h3-shot-quality-followup.md`。遵循：先补原 loader 回归 RED → 三份 Skill 文案最小修改 → 仅剧本制片 v3/hash/date → GREEN → 独立检查 → spec-review/scoped commit。显式使用 gpt-6.1-sol，子代理不递归委派、不提交。
+
+- [x] 主文将镜头计划和逐 Shot 检查接入当前拆分路径，按需读现有附件；不另装官方独立 Skill 或修改描述/触发/工具契约。
+- [x] production 落实可拍计划、内容决定合法时长、H3不混通用外壳、明确全参考未绑定时的草稿状态，以及取景/切点/动作/可见终点的写后核对。
+- [x] shot-recipes 保留旧四例，追加屏幕/键盘反例和 H3 六段中文教学例子，校验实际切点/时长和视域，不把示例输入当真绑定或剧情事实。
+- [x] 在现有 `bundled_official_skills_test.dart` 添加3项 loader 回归；原17项通过、新3项因旧流程/例子缺失得到 RED，再完成文案与版本期待修改后20项 GREEN，未削弱旧守卫。
+- [x] 只改 registry 中剧本制片 v3/hash/updatedAt，按主文件原始字节+排序后15个附件的NUL/路径/字节计算；其他技能和生成源不动，无 codegen/pub。
+- [x] 实施子代理串行跑官方加载20/20、未改同步15/15、两文件 analyze/format、diff 和hash/范围核对；主会话已检查实际五文件 diff 与日志结尾。
+- [x] 独立 gpt-6.1-sol check修正炮火吞没事件遗漏和场景参考保留标记，重新串行35项通过；主会话核对最终diff/输出并独立重算hash，完成spec判断和scoped commit门禁。仅本轮五文件及十份任务记录纳入自动提交，成功以Git回执为准；远程目录untracked规划排除，不push/amend，不归档他人任务。
+
+本轮命令（顺序执行，日志 `/tmp/reveric-h3-shot-quality-*.log`；独立检查加 `check-`）：
+
+```bash
+timeout 240 fvm flutter test --no-pub --concurrency=1 test/shared/services/bundled_official_skills_test.dart
+timeout 240 fvm flutter test --no-pub --concurrency=1 test/shared/services/official_skill_sync_test.dart
+timeout 240 fvm flutter analyze --no-pub lib/shared/services/bundled_official_skills.dart test/shared/services/bundled_official_skills_test.dart
+fvm dart format --output=none --set-exit-if-changed lib/shared/services/bundled_official_skills.dart test/shared/services/bundled_official_skills_test.dart
+git diff --check
+```
+
+本地无正式 tag 的发布未知和用户本轮独立版本批准已记录。静态测试不证明实际 Agent 输出或视频质量，不调用付费模型/生成、不改用户分镜或安装快照。

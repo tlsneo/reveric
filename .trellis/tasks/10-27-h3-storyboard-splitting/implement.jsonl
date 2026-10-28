@@ -1,9 +1,9 @@
-{"file":"AGENTS.md","reason":"第二轮用户已单独批准 v1→v2；固定模型、最小范围、共享平台、自动 scoped commit 和版本/数据安全边界"}
-{"file":".trellis/spec/backend/index.md","reason":"本轮修改共享技能资源与注册元数据；索引占位内容不替代实际规则"}
-{"file":".agents/rules/code-style.md","reason":"两个既有 Dart 文件的风格，不重构 loader 或添加 helper"}
-{"file":".agents/rules/ai-calling.md","reason":"保留现有调用和工具契约；不改 description/schema，不新增 Context-IR 调用"}
-{"file":".agents/rules/agent-skills.md","reason":"中文提示词格式归现有 H3 创作附件，更新版本/hash/日期并尊重安装与自定义语义"}
-{"file":".agents/rules/testing.md","reason":"RED/GREEN、最窄整文件测试、串行 FVM、完整日志，不真实调用生成"}
-{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"沿用加载和内容指纹测试，不把模板复制到 UI 或新增设置"}
-{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"资源→注册→加载/升级的边界；源码更新不冒充用户安装已经升级"}
-{"file":".trellis/tasks/10-27-h3-storyboard-splitting/research/chinese-prompt-followup.md","reason":"本轮最新批准范围与官方证据，明确取代第一轮不得改 Skill 的历史限制；三文件及 v2"}
+{"file":"AGENTS.md","reason":"第三轮已批准五文件及v2→v3；显式sol、共享平台、无用户DB/收费调用、scoped commit边界"}
+{"file":".trellis/spec/backend/index.md","reason":"共享Skill资源、注册与加载测试所属层；占位索引不替代项目具体规则"}
+{"file":".agents/rules/code-style.md","reason":"只改两个既有Dart文件，保留结构与完整测试守卫"}
+{"file":".agents/rules/ai-calling.md","reason":"不修改现有调用方式、工具description/schema或视频协议，不新增生成调用"}
+{"file":".agents/rules/agent-skills.md","reason":"入口拥有流程、附件拥有方法/格式；不新增Skill，维护v3/hash/date与用户覆盖语义"}
+{"file":".agents/rules/testing.md","reason":"真实loader的RED/GREEN，串行FVM、完整日志、窄范围验证，不冒充实际视频质量"}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"重用现有H3格式附件与工具链，不新建模板/解析服务，不重复放格式规则"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Skill主文→按需附件→打包→版本升级的边界；不声称用户设备快照已更新"}
+{"file":".trellis/tasks/10-27-h3-storyboard-splitting/research/h3-shot-quality-followup.md","reason":"第三轮最新已批准合同、官方依据、精确五文件和样例/时长/全参考未就绪约束；取代旧轮实施范围"}

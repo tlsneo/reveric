@@ -2,7 +2,7 @@
   "id": "h3-storyboard-splitting",
   "name": "h3-storyboard-splitting",
   "title": "H3 分镜格式与约五秒片段拆分",
-  "description": "优化 AI 拆分镜的 H3 格式、约五秒与可验证帧率边界；后续将 H3 描述正文和示例中文化并升级剧本制片 v2，不改生成链路或已有业务数据。",
+  "description": "前两轮H3入口与中文v2已交付；第三轮用户批准强化可拍镜头计划、H3全参考成稿与逐Shot检查，五文件升剧本制片v3，不改生成链路或已有业务数据。",
   "status": "in_progress",
   "dev_type": "frontend",
   "scope": "storyboard",
@@ -25,9 +25,12 @@
     "test/desktop/features/storyboard/region_test.dart",
     "assets/official_skills/screenplay-production/references/minimax-h3-prompts.md",
     "lib/shared/services/bundled_official_skills.dart",
-    "test/shared/services/bundled_official_skills_test.dart"
+    "test/shared/services/bundled_official_skills_test.dart",
+    "assets/official_skills/screenplay-production/SKILL.md",
+    "assets/official_skills/screenplay-production/references/production.md",
+    "assets/official_skills/screenplay-production/references/shot-recipes.md"
   ],
-  "notes": "第一轮已实施并通过独立 gpt-6.1-sol 审查：未选模型默认加载 H3 格式，约五秒；不新增选择器、不自动配置或生成。两个产品文件；RED→GREEN及独立复验各1个widget测试通过，analyze/format/diff通过。Skill、后端和业务数据未改；实际生成未验证。带拆分按钮的620px页头有已知9px溢出，不在本次请求修复范围。branch/base同为unstable，归档待另行处理。第二轮用户已批准三文件中文化及 v1→v2；实施与独立复验各32项测试通过，analyze/format/diff通过，仅三个产品文件。独立复核已修正示例参考保留关系与说话人标记；主会话收尾并自动提交，不改用户数据库，归档单独处理。",
+  "notes": "第一轮已实施并通过独立 gpt-6.1-sol 审查：未选模型默认加载 H3 格式，约五秒；不新增选择器、不自动配置或生成。两个产品文件；RED→GREEN及独立复验各1个widget测试通过，analyze/format/diff通过。Skill、后端和业务数据未改；实际生成未验证。带拆分按钮的620px页头有已知9px溢出，不在本次请求修复范围。branch/base同为unstable，归档待另行处理。第二轮用户已批准三文件中文化及 v1→v2；实施与独立复验各32项测试通过，analyze/format/diff通过，仅三个产品文件。独立复核已修正示例参考保留关系与说话人标记；主会话收尾并自动提交，不改用户数据库，归档单独处理。第三轮五文件可拍分镜/v3已完成实施和独立复验35项，修复例子遗漏炮火吞没及场景参考保留标记；主会话核对最终diff/日志并独立重算hash，通过范围/链接/旧例/旧测试保留审计，按预授权本轮scoped commit，不推送或归档。",
   "meta": {
     "chinesePromptFollowup": {
       "status": "verified",
@@ -35,6 +38,27 @@
       "approvedSkillVersion": 2,
       "versionDecision": "user_approved_v1_to_v2_with_release_status_unknown_no_local_tag",
       "productFilesChanged": true
+    },
+    "shotQualityFollowup": {
+      "status": "verified",
+      "implementationAgent": "fe597620-7601-408",
+      "checkAgent": "7562e6c2-3c8c-409",
+      "independentTestsPassed": 35,
+      "liveGenerationVerified": false,
+      "installedSnapshotVerified": false,
+      "contentHash": "f6ce8132a48aafead8d21cb8438adeea02b05c595e1196a6fa3805411593a8d8",
+      "updatedAt": "2026-10-28T09:43:18+00:00",
+      "initialDispatch": "503 auth_unavailable/server_is_overloaded before any tool use; retried with the same explicit gpt-6.1-sol after user requested continue",
+      "approvedSkillVersion": 3,
+      "versionDecision": "user_approved_v2_to_v3_with_release_status_unknown_no_local_formal_tag",
+      "scope": "Existing Skill main/workflow/recipe plus production metadata and existing tests only; official H3 structure, Chinese prose and actual full-reference readiness",
+      "productFiles": [
+        "assets/official_skills/screenplay-production/SKILL.md",
+        "assets/official_skills/screenplay-production/references/production.md",
+        "assets/official_skills/screenplay-production/references/shot-recipes.md",
+        "lib/shared/services/bundled_official_skills.dart",
+        "test/shared/services/bundled_official_skills_test.dart"
+      ]
     }
   }
 }
