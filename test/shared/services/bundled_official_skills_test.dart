@@ -265,7 +265,7 @@ void main() {
     for (final obsolete in ['一段英文', '句英文', '英文词', '350–500']) {
       expect(h3, isNot(contains(obsolete)), reason: obsolete);
     }
-    expect(detail.version, 3);
+    expect(detail.version, 4);
     expect(h3, contains('中文适配'));
     expect(h3, contains('不代表中文与英文的成片质量等价'));
     expect(h3, contains('`summary`：用中文'));
@@ -421,7 +421,7 @@ void main() {
           .content;
       expect(
         detail.prompt,
-        contains('原文事项 → 可拍镜头计划 → 按目标模型编写 → 逐 Shot 核对 → 保存回读'),
+        contains('原文事项与戏剧变化 → 镜头与表演预算 → 独立生成分组 → 目标格式 → 逐镜及跨片段核对 → 保存回读'),
       );
       final split = production
           .split('## 从场次拆分镜')
@@ -638,6 +638,307 @@ void main() {
       }
       expect(recipe, contains('精确'));
       expect(recipe, contains('不保证'));
+    },
+  );
+
+  test(
+    'production budgets performances before independent generation groups',
+    () async {
+      final detail = await loader.get(bundle, '剧本制片');
+      final production = detail.references
+          .singleWhere((ref) => ref.path == 'references/production.md')
+          .content;
+      final split = production
+          .split('## 从场次拆分镜')
+          .last
+          .split('## 先把制作依赖排清楚')
+          .first;
+      final steps = RegExp(
+        r'^\d+\. (.+)$',
+        multiLine: true,
+      ).allMatches(split).map((match) => match.group(1)!).toList();
+      expect(steps, hasLength(9));
+      expect(steps[1], startsWith('梳理原文事项与戏剧变化'));
+      expect(steps[1], contains('不预先分配给片段'));
+      expect(steps[1], isNot(contains('再分配给片段')));
+      expect(steps[2], startsWith('形成可拍镜头计划与表演预算'));
+      expect(steps[3], startsWith('确定独立生成分组'));
+      expect(steps[5], startsWith('按目标模型编写'));
+      expect(steps[6], startsWith('逐 Shot 核对'));
+      expect(steps[7], startsWith('将制作内容写入'));
+      expect(steps[8], startsWith('回读'));
+      for (final requirement in [
+        '顺序发生的时间相加',
+        '真正同时发生的部分才重叠',
+        '开场辨位、必要反应和信息阅读时间只计一次',
+        '文本估计',
+        '固定字速',
+        '统一动作秒数',
+        '显存预算',
+        '不是上限、下限或凑满目标',
+        '合法时可以短于 5 秒',
+        '不加速、不删戏',
+        '空动作',
+        '任意延长停留',
+        '前态 → 唯一执行 Shot → 后态',
+        '在 prompt 外',
+        '分组理由',
+      ]) {
+        expect(split, contains(requirement), reason: requirement);
+      }
+      final review = production.split('## 写后核对').last.split('## 看结果再返修').first;
+      for (final requirement in [
+        '相邻片段',
+        '合并',
+        '独立生成',
+        '动作归属',
+        '已完成状态',
+        '对白子串',
+        '只能证明覆盖',
+      ]) {
+        expect(review, contains(requirement), reason: requirement);
+      }
+    },
+  );
+
+  test(
+    'whole-scene H3 drafts have coherent durations, cuts and budgets',
+    () async {
+      final detail = await loader.get(bundle, '剧本制片');
+      final scene = detail.references
+          .singleWhere((ref) => ref.path == 'references/scene-example.md')
+          .content;
+      final delivery = scene.split('## 四、').last.split('## 五、').first;
+      final clips = RegExp(
+        r'^### 分镜 ([A-Z])：[^\n]*，(\d+) 秒$',
+        multiLine: true,
+      ).allMatches(delivery).toList();
+      expect(
+        clips,
+        hasLength(3),
+        reason: 'Review the actual complete H3 case.',
+      );
+      final prompts = RegExp(
+        r'```text\n([\s\S]*?)\n```',
+      ).allMatches(delivery).map((match) => match.group(1)!).toList();
+      expect(prompts, hasLength(clips.length));
+      final budgets = RegExp(
+        r'^\| ([A-Z]) \| (\d+) \| ([^|]+) \| ([\d.]+) \| ([^|]+) \|$',
+        multiLine: true,
+      ).allMatches(scene).toList();
+      expect(budgets, hasLength(clips.length));
+      expect(scene, contains('文本估计，不是试读或音频实测'));
+      expect(scene, contains('假设目标渠道接受 5、6、8 秒整秒时长'));
+      expect(scene, contains('未按输出 fps／帧数校准'));
+      expect(delivery, contains('T2VA'));
+      expect(delivery, contains('没有实际绑定输入'));
+      var hasShortSubstantiveClip = false;
+      var hasJustifiedLongClip = false;
+      for (var i = 0; i < clips.length; i++) {
+        final clip = clips[i];
+        final total = int.parse(clip.group(2)!);
+        final budget = budgets[i];
+        expect(budget.group(1), clip.group(1));
+        expect(int.parse(budget.group(2)!), total * 1000);
+        expect(double.parse(budget.group(4)!), total.toDouble());
+        final parts = RegExp(r'(\d+\.\d+) ')
+            .allMatches(budget.group(3)!)
+            .map((part) => double.parse(part.group(1)!))
+            .toList();
+        expect(parts, isNotEmpty);
+        expect(parts.reduce((a, b) => a + b), closeTo(total, 0.001));
+        expect(budget.group(5)!.trim(), isNotEmpty);
+        final prompt = prompts[i];
+        final fields = RegExp(
+          r'^([a-z_]+): ',
+          multiLine: true,
+        ).allMatches(prompt).toList();
+        expect(fields.map((field) => field.group(1)), [
+          'integrated_multimodal_description',
+          'overall_soundscape',
+          'non_diegetic_music',
+        ]);
+        for (var j = 0; j < fields.length; j++) {
+          final end = j + 1 < fields.length
+              ? fields[j + 1].start
+              : prompt.length;
+          final body = prompt.substring(fields[j].end, end).trim();
+          expect(
+            body == 'N/A' || RegExp(r'[\u4e00-\u9fff]').hasMatch(body),
+            isTrue,
+          );
+        }
+        final description = prompt.substring(fields[0].end, fields[1].start);
+        expect(description, startsWith('[Shot 1]'));
+        final shots = RegExp(
+          r'\[Shot (\d+)\]',
+        ).allMatches(description).toList();
+        expect(
+          shots.map((shot) => int.parse(shot.group(1)!)),
+          List.generate(shots.length, (index) => index + 1),
+        );
+        final cuts = RegExp(
+          r'\[Shot (\d+)\] At (\d{2}):(\d{2})\.(\d{3}), the camera cuts to ',
+        ).allMatches(description).toList();
+        expect(cuts, hasLength(shots.length - 1));
+        final boundaries = <double>[];
+        var cumulative = 0.0;
+        for (final part in parts) {
+          cumulative += part;
+          boundaries.add(cumulative);
+        }
+        final times = <double>[];
+        var previous = 0.0;
+        for (final cut in cuts) {
+          final time =
+              int.parse(cut.group(2)!) * 60 +
+              int.parse(cut.group(3)!) +
+              int.parse(cut.group(4)!) / 1000;
+          expect(time, greaterThan(previous));
+          expect(time, lessThan(total));
+          previous = time;
+          times.add(time);
+          expect(
+            boundaries,
+            anyElement(closeTo(time, 0.001)),
+            reason: 'A cut must respect a complete budgeted performance phase.',
+          );
+        }
+        expect(
+          times,
+          [
+            [3.6, 5.5],
+            [3.0],
+            <double>[],
+          ][i],
+          reason: 'Cuts must match the worked performance windows.',
+        );
+        for (final forbidden in [
+          'Shot 1（',
+          '【',
+          '首帧：',
+          '结束状态：',
+          '表演预算',
+          '分组理由',
+          '文本估计',
+          'duration_ms',
+          '待绑定',
+          '<ref ',
+          '<Subject ',
+          'For the target video,',
+        ]) {
+          expect(prompt, isNot(contains(forbidden)), reason: forbidden);
+        }
+        if (total <= 5) {
+          hasShortSubstantiveClip |=
+              description.contains('抬眼') &&
+              description.contains('<d>[Chinese] 他让我等你。</d>') &&
+              description.contains('合下') &&
+              description.contains('抱在身前');
+        } else {
+          hasJustifiedLongClip |= budget.group(5)!.contains('不能');
+        }
+      }
+      expect(hasShortSubstantiveClip, isTrue);
+      expect(hasJustifiedLongClip, isTrue);
+    },
+  );
+
+  test(
+    'whole-scene spoken lines and irreversible actions belong to one shot',
+    () async {
+      final detail = await loader.get(bundle, '剧本制片');
+      final scene = detail.references
+          .singleWhere((ref) => ref.path == 'references/scene-example.md')
+          .content;
+      final original = scene.split('原文：\n\n').last.split('\n\n').first;
+      expect(
+        original,
+        '> 雨夜。失物处柜台，林岚在外侧，值班员在内侧。柜台上放着一只合着盖的蓝色铁盒。  \n'
+        '> 林岚：“蓝盒子，是我父亲留下的。”  \n'
+        '> 值班员把手压在盒盖上：“里面有什么？”  \n'
+        '> 林岚：“一枚断齿的钥匙。”  \n'
+        '> 值班员移开手，推过铁盒。林岚接住，打开盒盖。盒内是一枚断齿钥匙。  \n'
+        '> 林岚停住，抬眼看他。值班员：“他让我等你。”  \n'
+        '> 林岚合上盒盖，双手把盒子抱在身前。',
+      );
+      final delivery = scene.split('## 四、').last.split('## 五、').first;
+      final prompts = RegExp(
+        r'```text\n([\s\S]*?)\n```',
+      ).allMatches(delivery).map((match) => match.group(1)!).toList();
+      expect(prompts, hasLength(3));
+      final spoken = RegExp(
+        r'<d>\[Chinese\] (.*?)</d>',
+      ).allMatches(prompts.join('\n')).map((match) => match.group(1));
+      expect(spoken, ['蓝盒子，是我父亲留下的。', '里面有什么？', '一枚断齿的钥匙。', '他让我等你。']);
+      expect(RegExp(r'<d>').allMatches(prompts.join('\n')), hasLength(4));
+      for (final line in spoken) {
+        expect(
+          RegExp(RegExp.escape(line!)).allMatches(prompts.join('\n')),
+          hasLength(1),
+        );
+      }
+      final shots = [
+        for (final prompt in prompts)
+          ...prompt
+              .split('overall_soundscape:')
+              .first
+              .split(
+                RegExp(
+                  r'\[Shot \d+\](?: At \d{2}:\d{2}\.\d{3}, the camera cuts to )?',
+                ),
+              )
+              .skip(1),
+      ];
+      expect(shots, hasLength(6));
+      // These are positive executions, not state anchors or planning-table claims.
+      final actions = [
+        (1, '把右掌压在盒盖中央'),
+        (3, '抬起右掌并移到盒体侧边'),
+        (3, '沿台面把铁盒推向林岚'),
+        (3, '双手接稳盒体两端'),
+        (4, '抬起盖沿'),
+        (5, '停住，抬眼看向值班员'),
+        (5, '将盒盖沿铰链向自己方向合下'),
+        (5, '双手托住盒体两端抬离台面，抱在身前'),
+      ];
+      var lastShot = -1;
+      var lastPosition = -1;
+      for (final (index, action) in actions) {
+        expect(
+          RegExp(RegExp.escape(action)).allMatches(shots.join('\n')),
+          hasLength(1),
+          reason: action,
+        );
+        final position = shots[index].indexOf(action);
+        expect(position, greaterThanOrEqualTo(0), reason: action);
+        if (index == lastShot) {
+          expect(
+            position,
+            greaterThan(lastPosition),
+            reason: 'Action order: $action',
+          );
+        }
+        lastShot = index;
+        lastPosition = position;
+      }
+      expect(shots[0], contains('闭合'));
+      expect(shots[1].indexOf('把右掌压在盒盖中央'), lessThan(shots[1].indexOf('<d>')));
+      expect(shots[2], contains('钥匙不可见'));
+      expect(shots[3], contains('右掌已经压着闭合盒盖'));
+      expect(shots[3], contains('闭合铁盒停在林岚面前'));
+      expect(shots[4], contains('已接稳的闭合铁盒'));
+      expect(shots[4], contains('唯一黄铜钥匙逐渐露出'));
+      expect(shots[4], contains('中间缺齿'));
+      expect(shots[4], contains('钥匙留在灰布上'));
+      expect(shots[5], contains('盒盖已打开'));
+      expect(shots[5].indexOf('停住，抬眼'), lessThan(shots[5].indexOf('<d>')));
+      expect(shots[5].indexOf('</d>'), lessThan(shots[5].indexOf('将盒盖沿铰链')));
+      expect(shots[5], contains('钥匙仍在盒内'));
+      expect(scene, contains('前态 → 唯一执行 Shot → 后态'));
+      expect(scene, contains('A 与 B'));
+      expect(scene, contains('B 与 C'));
+      expect(scene, contains('不能证明实际表演'));
     },
   );
 

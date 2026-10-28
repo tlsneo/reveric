@@ -1,6 +1,31 @@
 # 实施与验收
 
-> 当前仅执行末尾第三轮五文件范围；前两轮已提交，不重复实施。用户已批准官方 H3 写作要求融入现有中文 Skill，并批准本轮 v2→v3。
+> 当前执行第四轮五文件范围。用户已批准“内容充实、优先约5秒但允许超过、最终H3格式”及本轮v3→v4；前轮仅为历史，不重复实施。不得派发缓存刷新或通用运行时实现。
+
+## 第四轮实施清单
+
+- [x] 对照官方与第三方实际技能／代码／案例，确认用户短片段软偏好及H3输出边界；完整运行证据另存，不将旧上下文推断为当前安装版本。
+- [x] 用户在明确目标和软约5秒、不可空洞的约束后要求实施；收敛到design.md列出的五文件，入口已有完整短时长软偏好，保持不动。
+- [x] 用户在获知正式tag缺失、v3发布未知后明确回复“同意”，独立批准本轮v3→v4；本会话沿用现有任务。
+- [x] 更新implement/check manifests各9条并验证通过，激活现有任务；派发显式gpt-6.1-sol implement `3ec38cc4-9149-4ff`，限定五文件、不递归委派或提交。
+- [x] 原loader新增3项回归并实际运行RED：19通过／4失败，命中旧工作链、过早分配片段和缺少真实H3整场例子，非元数据差异；主会话已核对日志。
+- [x] 五文件实施完成：镜头／完整表演预算先于分组，动作唯一归属与相邻分组理由；原创整场例子改为8／6／5秒的H3草稿，各段预算有据且允许重估，不设统一时长或字速，无新runtime／框架。
+- [x] 实施阶段串行加载23／23、既有同步15／15，analyze无问题、format零改动、hash／links／diff／五文件审计通过；主会话已核对实际diff、报告及日志，LSP无server未冒充通过。
+- [x] 主会话逐句审查完整例子：原四句对白顺序各一次；压盖、移掌推接、开盖揭示、抬眼后最后一句、合盖后抱盒各有唯一执行处；A与B、B与C的边界有据，无靠冻结凑五秒。家庭对话不按句机械建条目／传达室比划不重演作为人工反例原则对照，未运行这些场次的新Agent输出或媒体。
+- [x] 独立gpt-6.1-sol check `52405a49-e1fd-40d` 完成，无新增产品修正；独立串行23＋15项通过，analyze／format／diff／hash／62链接／五文件审计通过。主会话已核对完整报告、最终diff与日志，并独立重算hash及核对原文／图片准备／旧例保留。
+- [x] 完成spec判断并在既有cross-layer guide补充指令交付与真实效果分界检查；本轮scoped commit门禁已满足，仅五产品文件、当前任务记录及该guide。按预授权自动提交，成功及哈希以Git回执为准，不push/amend，不纳入两份先前untracked诊断和远程模型目录。未做真实模型／视频／设备／显存及用户安装升级验证。
+
+验证命令（逐条串行、完整日志，前缀`/tmp/reveric-h3-content-budget-`）：
+
+```bash
+timeout 240 fvm flutter test --no-pub --concurrency=1 test/shared/services/bundled_official_skills_test.dart
+timeout 240 fvm flutter test --no-pub --concurrency=1 test/shared/services/official_skill_sync_test.dart
+timeout 240 fvm flutter analyze --no-pub lib/shared/services/bundled_official_skills.dart test/shared/services/bundled_official_skills_test.dart
+fvm dart format --output=none --set-exit-if-changed lib/shared/services/bundled_official_skills.dart test/shared/services/bundled_official_skills_test.dart
+git diff --check
+```
+
+## 历史实施记录
 
 ## 第一轮已批准并完成的范围
 

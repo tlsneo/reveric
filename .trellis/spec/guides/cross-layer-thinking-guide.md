@@ -288,6 +288,17 @@ When a CLI auto-detects a mode by probing a remote resource (e.g., checking if `
 
 ---
 
+## AI Instruction Delivery and Creative Output
+
+When a behavior is owned by an installed Skill or prompt asset, check each boundary separately:
+
+- [ ] Source asset → packaged version/hash → installed snapshot → instructions and references actually sent to the model. A version assertion or reference list does not prove the latest content was consumed.
+- [ ] Prompt contract tests prove the requested workflow; worked-example checks prove that example's structure and consistency. Neither proves a live Agent follows it or that generated media meets the creative goal.
+- [ ] For storyboard changes, distinguish an internal camera shot from an independent generation request. Review complete performance timing, source-action ownership, and cross-clip state—not only dialogue substring coverage or total duration.
+- [ ] Treat preferred clip length as a planning constraint, not filler or a reason to accelerate speech. Keep measured audio timing separate from textual estimates, and state which runtime/output checks remain unperformed.
+
+Do not expand a prompt-method task into a general cache or session migration unless that change is independently justified and approved.
+
 ## When to Create Flow Documentation
 
 Create detailed flow docs when:
