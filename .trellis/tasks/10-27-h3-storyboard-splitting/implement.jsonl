@@ -1,7 +1,9 @@
-{"file":".trellis/spec/frontend/index.md","reason":"确认桌面入口所属层与现有规范入口；占位内容不替代真实规则"}
-{"file":".agents/rules/code-style.md","reason":"修改入口和回归测试 Dart 的风格约束"}
-{"file":".agents/rules/ai-calling.md","reason":"保持现有 Agent 调用；不修改工具描述、schema 或另建 splitter"}
-{"file":".agents/rules/agent-skills.md","reason":"复用现有模型格式附件，不把 H3 模板复制到 UI，不越界更新 Skill"}
-{"file":".agents/rules/testing.md","reason":"窄范围串行 Flutter 回归、超时、完整日志及本地化缓存隔离"}
-{"file":".trellis/tasks/10-27-h3-storyboard-splitting/research/method-boundaries.md","reason":"已有制片方法及最小修改边界，避免重复改造 Skill"}
-{"file":".trellis/tasks/10-27-h3-storyboard-splitting/research/runtime-constraints.md","reason":"实际入口、跨平台覆盖、模型与帧率限制、可复用测试"}
+{"file":"AGENTS.md","reason":"第二轮用户已单独批准 v1→v2；固定模型、最小范围、共享平台、自动 scoped commit 和版本/数据安全边界"}
+{"file":".trellis/spec/backend/index.md","reason":"本轮修改共享技能资源与注册元数据；索引占位内容不替代实际规则"}
+{"file":".agents/rules/code-style.md","reason":"两个既有 Dart 文件的风格，不重构 loader 或添加 helper"}
+{"file":".agents/rules/ai-calling.md","reason":"保留现有调用和工具契约；不改 description/schema，不新增 Context-IR 调用"}
+{"file":".agents/rules/agent-skills.md","reason":"中文提示词格式归现有 H3 创作附件，更新版本/hash/日期并尊重安装与自定义语义"}
+{"file":".agents/rules/testing.md","reason":"RED/GREEN、最窄整文件测试、串行 FVM、完整日志，不真实调用生成"}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"沿用加载和内容指纹测试，不把模板复制到 UI 或新增设置"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"资源→注册→加载/升级的边界；源码更新不冒充用户安装已经升级"}
+{"file":".trellis/tasks/10-27-h3-storyboard-splitting/research/chinese-prompt-followup.md","reason":"本轮最新批准范围与官方证据，明确取代第一轮不得改 Skill 的历史限制；三文件及 v2"}

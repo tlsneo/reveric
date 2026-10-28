@@ -248,6 +248,170 @@ void main() {
     },
   );
 
+  test('H3 defaults to Chinese prose without changing its fixed syntax', () async {
+    final detail = await loader.get(bundle, '剧本制片');
+    final h3 = detail.references
+        .singleWhere((ref) => ref.path == 'references/minimax-h3-prompts.md')
+        .content;
+
+    expect(
+      h3,
+      isNot(contains('正文、字段名和镜头标记全部写英文')),
+      reason:
+          'H3 prose must be readable/editable in Chinese, not forced English.',
+    );
+    expect(h3, contains('正文默认使用中文'));
+    expect(h3, contains('对白、歌词和画面中可见的文字逐字保留原文'));
+    for (final obsolete in ['一段英文', '句英文', '英文词', '350–500']) {
+      expect(h3, isNot(contains(obsolete)), reason: obsolete);
+    }
+    expect(detail.version, 2);
+    expect(h3, contains('中文适配'));
+    expect(h3, contains('不代表中文与英文的成片质量等价'));
+    expect(h3, contains('`summary`：用中文'));
+    expect(h3, contains('`detailed_description`：先用中文'));
+    for (final source in [
+      'https://platform.minimaxi.com/docs/api-reference/video-generation-v2-create',
+      'https://github.com/MiniMax-AI/MiniMax-H3/tree/main/skills/h3-prompt-writing',
+      'VIDEO_PROMPT_WRITING_GUIDE_base_en.md',
+      'VIDEO_PROMPT_WRITING_GUIDE_ref_en.md',
+    ]) {
+      expect(h3, contains(source));
+    }
+    for (final syntax in [
+      'For the target video, at 0.00 seconds into the target video,',
+      '(from [Shot 1]) is fully referenced.',
+      'How the reference pictures align with the target video —',
+      '(from Shot 1) aligns with the 0.00-second mark of the target video;',
+      '(from Shot N) aligns with the S.SS-second mark of the target video.',
+      '[Shot N] At MM:SS.mmm, the camera cuts to',
+      '切点严格递增，且落在生成时长内',
+      '<Subject N>',
+      '(S1)',
+      '<d>[Chinese]',
+      '<scenetrans>',
+      '<cutoff>',
+      '[reference generation]',
+      '[keyframe completion + reference generation]',
+      'fully_preserved',
+      'partially_preserved',
+      'attribute_transfer',
+      'weak_reference',
+      'fully_copy',
+      'partially_copy',
+      'reference',
+      'N/A',
+    ]) {
+      expect(h3, contains(syntax), reason: syntax);
+    }
+    expect(h3, contains('模式按实际绑定的输入判断，不按计划判断'));
+    expect(h3, contains('不代表实际已绑定'));
+  });
+
+  test(
+    'H3 keyframe and full-reference examples keep Chinese field bodies',
+    () async {
+      final detail = await loader.get(bundle, '剧本制片');
+      final h3 = detail.references
+          .singleWhere((ref) => ref.path == 'references/minimax-h3-prompts.md')
+          .content;
+      final blocks = RegExp(
+        r'```text\n([\s\S]*?)\n```',
+      ).allMatches(h3).map((match) => match.group(1)!).toList();
+      final keyframe = blocks.singleWhere(
+        (block) => block.startsWith('For the target video,'),
+      );
+      final fullReferenceBlocks = blocks.where(
+        (block) => block.startsWith('subject_definitions:'),
+      );
+      expect(
+        fullReferenceBlocks,
+        hasLength(1),
+        reason: 'Full-reference mode needs a readable six-field example.',
+      );
+      final fullReference = fullReferenceBlocks.single;
+      final expectedFields = [
+        [
+          'integrated_multimodal_description',
+          'overall_soundscape',
+          'non_diegetic_music',
+        ],
+        [
+          'subject_definitions',
+          'summary',
+          'retention_analysis',
+          'detailed_description',
+          'overall_soundscape',
+          'non_diegetic_music',
+        ],
+      ];
+      final examples = [keyframe, fullReference];
+      for (var i = 0; i < examples.length; i++) {
+        final fields = RegExp(
+          r'^([a-z_]+): ',
+          multiLine: true,
+        ).allMatches(examples[i]).toList();
+        expect(fields.map((field) => field.group(1)), expectedFields[i]);
+        for (var j = 0; j < fields.length; j++) {
+          final field = fields[j];
+          final end = j + 1 < fields.length
+              ? fields[j + 1].start
+              : examples[i].length;
+          final body = examples[i]
+              .substring(field.end, end)
+              .trim()
+              .replaceAll(RegExp(r'<ref [^>]+/>'), '')
+              .replaceAll(RegExp(r'<d>.*?</d>'), '');
+          expect(
+            body == 'N/A' || RegExp(r'[\u4e00-\u9fff]').hasMatch(body),
+            isTrue,
+            reason:
+                '${field.group(1)} needs Chinese prose beyond labels/dialogue.',
+          );
+          final narrative = body.replaceAll(
+            RegExp(r'At \d{2}:\d{2}\.\d{3}, the camera cuts to '),
+            '',
+          );
+          expect(
+            RegExp(r'[A-Za-z]+(?:[ ,\n]+[A-Za-z]+){7,}').hasMatch(narrative),
+            isFalse,
+            reason: '${field.group(1)} must not retain long English narration.',
+          );
+        }
+        expect(examples[i], contains('右手食指'));
+        expect(examples[i], contains('钥匙留在原处'));
+        expect(examples[i], contains('<d>[Chinese] 你真的要走？</d>'));
+        expect(examples[i], contains('[Shot 1]'));
+        expect(
+          examples[i],
+          contains('[Shot 2] At 00:04.000, the camera cuts to '),
+        );
+        expect(
+          examples[i],
+          contains('[Shot 3] At 00:06.500, the camera cuts to '),
+        );
+        expect(
+          examples[i],
+          contains(RegExp(r'<ref input_id="[^"]+" label="[^"]+" />')),
+        );
+      }
+      expect(fullReference, contains('<Subject 1>'));
+      expect(fullReference, contains('[reference generation]'));
+      expect(
+        fullReference,
+        contains(
+          '画内的 <Subject 2> 是三十多岁男子，声音低沉疲惫 (S1)，'
+          '放慢语速问：<d>[Chinese] 你真的要走？</d>',
+        ),
+      );
+      expect(
+        fullReference,
+        contains('<Subject 3> — [Shot 1]、[Shot 2]、[Shot 3]，fully_preserved'),
+        reason: 'Shot crops do not discard the defined room-reference role.',
+      );
+    },
+  );
+
   test('badge from the spec table reaches the summary list', () async {
     final result = await loader.list(bundle);
     final badged = {

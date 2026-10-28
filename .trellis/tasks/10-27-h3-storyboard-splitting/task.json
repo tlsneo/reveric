@@ -2,7 +2,7 @@
   "id": "h3-storyboard-splitting",
   "name": "h3-storyboard-splitting",
   "title": "H3 分镜格式与约五秒片段拆分",
-  "description": "仅优化 AI 拆分镜：按 H3 专用格式、约五秒片段和可验证帧率约束生成可衔接分镜；不改地图、媒体生成后端或已有业务数据。",
+  "description": "优化 AI 拆分镜的 H3 格式、约五秒与可验证帧率边界；后续将 H3 描述正文和示例中文化并升级剧本制片 v2，不改生成链路或已有业务数据。",
   "status": "in_progress",
   "dev_type": "frontend",
   "scope": "storyboard",
@@ -22,8 +22,19 @@
   "parent": null,
   "relatedFiles": [
     "lib/desktop/features/storyboard/region.dart",
-    "test/desktop/features/storyboard/region_test.dart"
+    "test/desktop/features/storyboard/region_test.dart",
+    "assets/official_skills/screenplay-production/references/minimax-h3-prompts.md",
+    "lib/shared/services/bundled_official_skills.dart",
+    "test/shared/services/bundled_official_skills_test.dart"
   ],
-  "notes": "已实施并通过独立 gpt-6.1-sol 审查：未选模型默认加载 H3 格式，约五秒；不新增选择器、不自动配置或生成。两个产品文件；RED→GREEN及独立复验各1个widget测试通过，analyze/format/diff通过。Skill、后端和业务数据未改；实际生成未验证。带拆分按钮的620px页头有已知9px溢出，不在本次请求修复范围。branch/base同为unstable，归档待另行处理。",
-  "meta": {}
+  "notes": "第一轮已实施并通过独立 gpt-6.1-sol 审查：未选模型默认加载 H3 格式，约五秒；不新增选择器、不自动配置或生成。两个产品文件；RED→GREEN及独立复验各1个widget测试通过，analyze/format/diff通过。Skill、后端和业务数据未改；实际生成未验证。带拆分按钮的620px页头有已知9px溢出，不在本次请求修复范围。branch/base同为unstable，归档待另行处理。第二轮用户已批准三文件中文化及 v1→v2；实施与独立复验各32项测试通过，analyze/format/diff通过，仅三个产品文件。独立复核已修正示例参考保留关系与说话人标记；主会话收尾并自动提交，不改用户数据库，归档单独处理。",
+  "meta": {
+    "chinesePromptFollowup": {
+      "status": "verified",
+      "scope": "H3 中文描述正文和示例，保留字段及固定标记；不改参考或生成流程",
+      "approvedSkillVersion": 2,
+      "versionDecision": "user_approved_v1_to_v2_with_release_status_unknown_no_local_tag",
+      "productFilesChanged": true
+    }
+  }
 }
