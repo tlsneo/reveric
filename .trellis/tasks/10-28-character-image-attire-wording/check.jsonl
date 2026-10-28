@@ -1,0 +1,3 @@
+{"file":".agents/rules/ai-calling.md","reason":"核对只改已批准句子，不扩调用、工具契约、重试或模型"}
+{"file":".agents/rules/code-style.md","reason":"必要断言替换的Dart格式保持"}
+{"file":".agents/rules/testing.md","reason":"遵从用户不执行测试，区分静态审查与远程审核结果"}

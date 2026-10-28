@@ -1,0 +1,3 @@
+{"file":".agents/rules/ai-calling.md","reason":"仅改人物生图模板文案，不改调用或工具描述/schema"}
+{"file":".agents/rules/code-style.md","reason":"现有Dart测试只同步文案断言"}
+{"file":".agents/rules/testing.md","reason":"用户明确不运行测试；仅同步旧断言，静态差异审查不冒充运行通过"}

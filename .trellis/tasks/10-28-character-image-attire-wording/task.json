@@ -1,0 +1,34 @@
+{
+  "id": "character-image-attire-wording",
+  "name": "character-image-attire-wording",
+  "title": "人物四视图使用正向着装描述",
+  "description": "仅将人物四视图模板的着装负面枚举替换为已确认的正向描述；保留年龄、头像和布局，用户明确不运行测试，不做真实生图。",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "tlsneo",
+  "assignee": "tlsneo",
+  "createdAt": "2026-10-28",
+  "completedAt": null,
+  "branch": "unstable",
+  "base_branch": "unstable",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "assets/prompts/task/character_image.md",
+    "test/shared/services/ai/character_image_prompt_test.dart"
+  ],
+  "notes": "用户批准精确模板替换并明确不需要测试；只同步必要旧文案断言，独立字节审查及diff/格式检查通过，未执行测试或真实生图。",
+  "meta": {
+    "validation": "static_review_only_tests_skipped_by_user",
+    "subagentModel": "gpt-6.1-sol",
+    "testExecution": "not_run_user_requested",
+    "liveImageValidation": false
+  }
+}
