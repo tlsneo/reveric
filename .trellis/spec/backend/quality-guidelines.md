@@ -115,3 +115,81 @@ archive validation, or `macos-arm64_x86_64` lookup unchanged.
 
 Correct: explicitly build the one retained target, assemble and validate its
 single-architecture package, and use the same target in cache / app checks.
+
+---
+
+## Official Skill Extraction Contract
+
+### 1. Scope / Trigger
+
+Applies when separating an app business capability into an independent official
+Skill, including the `AI 拆分镜` extraction. Move the actual method, not only its
+entry name; keep operation contracts in their existing bundled owner.
+
+### 2. Signatures
+
+- `BundledOfficialSkillsLoader.get(AssetBundle bundle, String listingId)` loads
+  the installable snapshot; its `listingId` is the registered Skill name.
+- `AgentSkill` takes `{"name":"AI 拆分镜"}` for the splitting method. Reference
+  requests use that owner's name and its installed-relative reference path.
+- The desktop split callback in `lib/desktop/features/storyboard/region.dart`
+  supplies a chat draft; it does not itself invoke `AgentSkill` or send the chat.
+
+### 3. Contracts
+
+- `AI 拆分镜` owns the splitting method and video-prompt formats under
+  `assets/official_skills/storyboard-splitting/`; `剧本制片` retains visual assets,
+  previsualization, generation and result repair. `剧本写作` owns screenplay text.
+- Every registered reference must be inside its Skill asset root. Maintain a
+  single physical owner, local Markdown links within the installed snapshot,
+  and named, optional handoffs for other Skills. Do not create mutual full-load
+  prerequisites or make image generation a prerequisite for splitting.
+- Update callers, handoffs, registry, nested Flutter asset declarations and
+  content hashes together. Evaluate release/version handling for every changed
+  official package, including a package whose only change is a handoff name.
+- A new official identity has independent installation/enabled state. Upgrading
+  the former owner preserves its ID, display name, enabled state and order;
+  do not overwrite local conversions, same-name local Skills or deletion choices.
+
+### 4. Validation & Error Matrix
+
+| Condition | Required behavior |
+| --- | --- |
+| Reference registered outside its Skill root | Loader throws `StateError`; no partial snapshot |
+| Missing registered reference | Detail loading fails rather than omitting it |
+| Unknown official listing name | Loader throws `ArgumentError` |
+| Named Skill disabled or absent at runtime | Report unavailable; no hidden official-asset fallback |
+| New identity previously handled/deleted or occupied by a local Skill | Preserve the existing sync/user-choice semantics |
+
+### 5. Good / Base / Bad Cases
+
+Good: the new splitter loads all its own method/format references even when
+production is disabled; the old production identity and user preferences survive.
+Base: writing and authorized generation still use their respective existing owners.
+Bad: a new name merely redirects to the old method, or both packages retain
+competing copies of that method.
+
+### 6. Required Tests
+
+- `test/desktop/features/storyboard/region_test.dart`: click the real split button;
+  inspect the new owner/path in its request and verify no clip writes on click.
+- `test/shared/services/bundled_official_skills_test.dart`: load actual new/old
+  packages, check method ownership, paths, asset coverage, links and hashes.
+- `test/shared/services/bundled_control_skills_test.dart`: update authoring handoffs
+  while retaining the existing operation contracts and lack of official fallback.
+- `test/shared/providers/official_skill_sync_providers_test.dart` and
+  `test/shared/services/official_skill_sync_test.dart`: cover packaged old-owner
+  upgrade plus independent installation, disabled/deleted and local choices.
+- Include untracked new asset roots in content and whitespace review. After
+  staging only owned paths, run `git diff --cached --check`; an unstaged diff
+  check alone does not inspect previously untracked additions.
+- Run Flutter tests serially. Request/loader/installation tests are not evidence
+  that a live model consumed the new content or produced good storyboards.
+
+### 7. Wrong vs Correct
+
+Wrong: register `screenplay-production/references/minimax-h3-prompts.md` under
+`storyboard-splitting/SKILL.md`, or copy it to both packages to avoid fixing links.
+
+Correct: move the single source into the new owner's root, update its registry
+and asset declarations, and route any remaining consumers to that owner by name.

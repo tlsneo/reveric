@@ -1,9 +1,13 @@
-{"file":"AGENTS.md","reason":"审查第四轮五文件及v4独立授权、保护数据、共享平台、FVM串行和诚实边界"}
-{"file":".trellis/spec/backend/index.md","reason":"最终共享技能和注册测试全范围质量核对"}
-{"file":".agents/rules/code-style.md","reason":"现有两个Dart文件的范围、风格、完整旧测试保留"}
-{"file":".agents/rules/ai-calling.md","reason":"不改工具说明、schema或生成调用，不扩大到缓存和Provider"}
-{"file":".agents/rules/agent-skills.md","reason":"主文/方法/专属格式分工，真实素材，v4/hash/date与原升级机制"}
-{"file":".agents/rules/testing.md","reason":"核对实际RED、GREEN、串行独立回归，不能以字符串守卫宣称分镜或视频质量"}
-{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"不新增splitter/解析器/技能，不照搬固定时长、字速和第三方模板"}
-{"file":".trellis/tasks/10-27-h3-storyboard-splitting/research/fragmentation-method-followup.md","reason":"审查充实短片段预算、原文及动作恰好一次、H3整场案例、约5秒非上限或填充目标"}
-{"file":".trellis/tasks/10-27-h3-storyboard-splitting/research/fragmentation-runtime-evidence.md","reason":"旧运行失败机理和尚未验证的安装/真实运行边界"}
+{"file":"AGENTS.md","reason":"审查第五轮独立技能最新授权，保护业务数据及自定义选择，FVM串行与诚实验收"}
+{"file":".trellis/spec/backend/index.md","reason":"独立技能、旧技能清理、共享资源和注册测试全范围核对"}
+{"file":".trellis/spec/frontend/index.md","reason":"验证制作按钮路由新技能，原组件布局/回调和不自动发送保持"}
+{"file":".agents/rules/code-style.md","reason":"现有按钮、注册和测试的最小必要改动及旧回归保留"}
+{"file":".agents/rules/ai-calling.md","reason":"不改工具说明/schema，不加入确定性splitter或通用运行时补丁"}
+{"file":".agents/rules/agent-skills.md","reason":"独立AI拆分镜实际拥有方法，不是跳回旧技能的空壳，单一真源、路由、注册、安装语义完整"}
+{"file":".agents/rules/testing.md","reason":"核对按钮路由RED/GREEN及新技能加载、附件、同步、串行独立回归；不冒充实际Agent质量"}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"检查无重复拆分方法、复制模型知识或互相要求完整加载的循环"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"分别审查入口请求、技能内容交付及实际效果的证据和未验证边界"}
+{"file":".trellis/tasks/10-27-h3-storyboard-splitting/research/fragmentation-method-followup.md","reason":"迁移后保留镜头/片段分层、充实时间预算、动作唯一归属及中文H3；旧五文件限制不适用"}
+{"file":".trellis/tasks/10-27-h3-storyboard-splitting/research/fragmentation-runtime-evidence.md","reason":"历史失败机理不等于当前安装或运行结论，禁止用注册名和mock输出替代实际验证"}
+{"file":".trellis/tasks/10-27-h3-storyboard-splitting/research/independent-storyboard-skill-extraction.md","reason":"复核第五轮完整抽取边界、单一格式真源、全部调用/链接、安装版本及跨技能路由，无循环或原制作退化"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "独立官方技能抽取的可执行契约：实际方法归属、同根附件、完整路由、独立安装与用户选择、请求/真实效果证据分层"}

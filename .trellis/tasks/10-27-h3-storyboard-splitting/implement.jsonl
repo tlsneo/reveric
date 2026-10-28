@@ -1,9 +1,13 @@
-{"file":"AGENTS.md","reason":"第四轮五文件已批准及本轮独立v3→v4；显式sol、FVM串行、保护数据与用户自定义、自动scoped commit"}
-{"file":".trellis/spec/backend/index.md","reason":"共享官方Skill资产、注册及加载测试所属层，命中具体规则优先"}
-{"file":".agents/rules/code-style.md","reason":"现有注册与测试Dart局部修改，不引入无关重构或生成"}
-{"file":".agents/rules/ai-calling.md","reason":"不改AI调用、tool description/schema、视频协议或参数"}
-{"file":".agents/rules/agent-skills.md","reason":"方法归制片流程，H3格式仍由专属附件拥有，五文件v4/hash/date与安装语义保持"}
-{"file":".agents/rules/testing.md","reason":"原loader回归RED→GREEN、串行FVM、完整日志，检查实际案例而不冒充真实Agent效果"}
-{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"复用既有原创整场案例和H3格式，不导入第三方工具链、不新建解析框架"}
-{"file":".trellis/tasks/10-27-h3-storyboard-splitting/research/fragmentation-method-followup.md","reason":"第四轮最新授权方法：优先约5秒但内容不空洞、可必要延长、动作唯一归属、第三方只借方法"}
-{"file":".trellis/tasks/10-27-h3-storyboard-splitting/research/fragmentation-runtime-evidence.md","reason":"真实旧上下文与单句建clip／子串核验的证据；不据此扩成缓存实施或声称用户已升级"}
+{"file":"AGENTS.md","reason":"第五轮独立AI拆分镜技能；实施须等待最新方案批准，显式sol、FVM串行、保护数据和自定义选择、自动scoped commit"}
+{"file":".trellis/spec/backend/index.md","reason":"共享技能资产、注册和加载测试所属层，命中具体规则优先"}
+{"file":".trellis/spec/frontend/index.md","reason":"制作按钮回调仅更换技能路由，保留UI布局与人工发送行为"}
+{"file":".agents/rules/code-style.md","reason":"按钮路由、注册及现有测试的必要Dart修改，不做无关重构"}
+{"file":".agents/rules/ai-calling.md","reason":"复用AgentSkill和工具契约；不改工具description/schema或生成调用"}
+{"file":".agents/rules/agent-skills.md","reason":"按独立业务任务拆分技能，单一方法真源，注册和附件闭环，保留停用/删除/同名覆盖"}
+{"file":".agents/rules/testing.md","reason":"真实按钮请求、新技能加载和附件路由回归；串行FVM与完整日志，静态测试不证明真实创作"}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"迁移而非重复维护拆分规则，共有模型知识只保留单一真源，不新增splitter或解析框架"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"区分按钮点名、源码/注册/安装快照/实际模型输入和创作效果"}
+{"file":".trellis/tasks/10-27-h3-storyboard-splitting/research/fragmentation-method-followup.md","reason":"保留充实软约5秒、必要延长、动作唯一归属和H3中文要求；旧五文件范围由PRD第五轮取代"}
+{"file":".trellis/tasks/10-27-h3-storyboard-splitting/research/fragmentation-runtime-evidence.md","reason":"旧运行日志仅作历史证据，不推断新运行已加载更新，不扩成缓存改造"}
+{"file":".trellis/tasks/10-27-h3-storyboard-splitting/research/independent-storyboard-skill-extraction.md","reason":"第五轮独立技能的内容归属、九附件迁移、链接约束、调用、版本/安装兼容和测试证据；design为最终方案真源"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "第五轮抽取完成后沉淀的注册/附件/安装契约，后续修改保持单一真源和运行证据边界"}

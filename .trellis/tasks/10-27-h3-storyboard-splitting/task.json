@@ -2,7 +2,7 @@
   "id": "h3-storyboard-splitting",
   "name": "h3-storyboard-splitting",
   "title": "H3 分镜格式与约五秒片段拆分",
-  "description": "第四轮已批准：改善整场镜头编排、动作唯一归属与充实的约五秒表演预算，允许必要延长，最终H3中文格式；五文件升v4，不改缓存、生成链路或业务数据。",
+  "description": "第五轮已批准实施：独立「AI 拆分镜」official技能拥有拆分和视频提示词方法，制作按钮点名，迁移九附件并清理旧制片/写作交接；用户单独批准新v1、制片v5、写作v4，不改运行时或数据。",
   "status": "in_progress",
   "dev_type": "frontend",
   "scope": "storyboard",
@@ -23,16 +23,53 @@
   "relatedFiles": [
     "lib/desktop/features/storyboard/region.dart",
     "test/desktop/features/storyboard/region_test.dart",
-    "assets/official_skills/screenplay-production/references/minimax-h3-prompts.md",
+    "assets/official_skills/storyboard-splitting/SKILL.md",
+    "assets/official_skills/storyboard-splitting/references/splitting.md",
+    "assets/official_skills/storyboard-splitting/references/storyboard.md",
+    "assets/official_skills/storyboard-splitting/references/minimax-h3-prompts.md",
     "lib/shared/services/bundled_official_skills.dart",
     "test/shared/services/bundled_official_skills_test.dart",
     "assets/official_skills/screenplay-production/SKILL.md",
     "assets/official_skills/screenplay-production/references/production.md",
-    "assets/official_skills/screenplay-production/references/shot-recipes.md",
-    "assets/official_skills/screenplay-production/references/scene-example.md"
+    "assets/official_skills/storyboard-splitting/references/shot-recipes.md",
+    "assets/official_skills/storyboard-splitting/references/scene-example.md",
+    "assets/official_skills/screenplay-writing/SKILL.md",
+    "assets/bundled_skills/screenplay-tools/SKILL.md",
+    "assets/bundled_skills/screenplay-tools/references/clips.md",
+    "test/shared/services/bundled_control_skills_test.dart",
+    "test/shared/providers/official_skill_sync_providers_test.dart",
+    "pubspec.yaml"
   ],
   "notes": "第一轮已实施并通过独立 gpt-6.1-sol 审查：未选模型默认加载 H3 格式，约五秒；不新增选择器、不自动配置或生成。两个产品文件；RED→GREEN及独立复验各1个widget测试通过，analyze/format/diff通过。Skill、后端和业务数据未改；实际生成未验证。带拆分按钮的620px页头有已知9px溢出，不在本次请求修复范围。branch/base同为unstable，归档待另行处理。第二轮用户已批准三文件中文化及 v1→v2；实施与独立复验各32项测试通过，analyze/format/diff通过，仅三个产品文件。独立复核已修正示例参考保留关系与说话人标记；主会话收尾并自动提交，不改用户数据库，归档单独处理。第三轮五文件可拍分镜/v3已完成实施和独立复验35项，修复例子遗漏炮火吞没及场景参考保留标记；主会话核对最终diff/日志并独立重算hash，通过范围/链接/旧例/旧测试保留审计，按预授权本轮scoped commit，不推送或归档。",
   "meta": {
+    "independentStoryboardSkill": {
+      "status": "verified_static_and_isolated_install",
+      "implementationAgent": "86aa536c-5075-4d9",
+      "checkAgent": "6b2d0b65-fc8b-410",
+      "implementationTestsPassed": 79,
+      "independentTestsPassed": 79,
+      "independentFindings": "no_remaining_issue_after_one_eof_newline_fix",
+      "finalSplitterUpdatedAt": "2026-10-28T13:05:18+00:00",
+      "finalContentHashes": {
+        "AI 拆分镜": "1a8531a2143f5c4fb6054a9ae5fbda1d735aac6d36611cccb60592d8ac58c203",
+        "剧本制片": "e91a8be9583ed1d2e05fa0cc51a96b75b9e0eb0054a27f0a33d1744217f34d7d",
+        "剧本写作": "e047a5636426bd9209861234ea72df3af811e274310b1d9f34d166682b06fc64"
+      },
+      "researchAgent": "fa153928-66ee-405",
+      "research": "research/independent-storyboard-skill-extraction.md",
+      "confirmedRequirement": "独立AI拆分镜技能；分镜与剧本职责分开；制作按钮明确指定",
+      "approvedVersions": {
+        "AI 拆分镜": 1,
+        "剧本制片": 5,
+        "剧本写作": 4
+      },
+      "approval": "用户在最终方案后明确回复同意",
+      "releaseStatus": "unknown_no_local_formal_tags",
+      "productFilesChanged": true,
+      "isolatedInstallUpgradeVerified": true,
+      "userInstalledSnapshotVerified": false,
+      "liveOutputVerified": false
+    },
     "contentBudgetFollowup": {
       "status": "verified",
       "implementationAgent": "3ec38cc4-9149-4ff",

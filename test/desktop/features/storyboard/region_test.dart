@@ -198,13 +198,16 @@ void main() {
       expect(
         request,
         allOf(
-          contains('剧本制片'),
-          contains('制片流程、分镜指南、模型能力、视频提示词'),
+          contains('「AI 拆分镜」'),
+          contains('references/splitting.md'),
+          contains('分镜指南、模型能力、视频提示词'),
+          isNot(contains('「剧本制片」')),
           contains('剧本工具使用规范'),
           contains('分镜与媒体节点附件'),
           contains('查询实际型号与渠道能力'),
         ),
-        reason: 'Reuse the existing production and operation methods',
+        reason:
+            'Use the independent splitting method and existing operation contracts',
       );
       expect(
         request,

@@ -60,6 +60,170 @@ void main() {
   );
 
   test(
+    'packaged extraction upgrades production and independently installs splitter',
+    () async {
+      final setup = _TestSetup(
+        AppDatabase.forTest(NativeDatabase.memory()),
+        _BundledCatalogService(),
+      );
+      addTearDown(setup.dispose);
+      final notifier = setup.container.read(
+        installedAgentSkillsProvider.notifier,
+      );
+      final old = await notifier.install(
+        const InstallSkillInput(
+          sourceKind: AgentSkillSourceKind.official,
+          sourceListingPublicId: '剧本制片',
+          sourceDisplayName: '剧本制片',
+          sourceVersion: '4',
+          name: '我的制片',
+          description: 'old production',
+          prompt: 'old production and splitting',
+          enabled: false,
+          references: [
+            AgentSkillReferenceFile(
+              path: 'references/production.md',
+              content: 'old production and splitting method',
+            ),
+          ],
+        ),
+      );
+      setup.restart();
+      final result = await setup.sync();
+      expect(result.failed, 0);
+      expect(result.upgraded, 1);
+      expect(result.installed, bundledOfficialSkillSpecs.length - 1);
+      final skills = await setup.skills();
+      final production = skills.singleWhere((skill) => skill.id == old.id);
+      final source = await const BundledOfficialSkillsLoader().get(
+        rootBundle,
+        '剧本制片',
+      );
+      expect(production.name, old.name);
+      expect(production.enabled, isFalse);
+      expect(production.sortOrder, old.sortOrder);
+      expect(production.sourceVersion, '5');
+      expect(production.prompt, source.prompt);
+      expect(production.references, source.references);
+      expect(
+        production.references.map((ref) => ref.path),
+        isNot(contains('references/minimax-h3-prompts.md')),
+      );
+      final history = await setup.database.novelAgentSkillRevisionDao
+          .listRevisions(old.id);
+      expect(history, hasLength(2));
+      final install = history.singleWhere(
+        (revision) => revision.changeSource == SkillRevisionSource.install,
+      );
+      expect(
+        (await setup.database.novelAgentSkillRevisionDao.getRevision(
+          install.id,
+        ))!.references,
+        old.references,
+      );
+      final split = skills.singleWhere((skill) => skill.name == 'AI 拆分镜');
+      final splitSource = await const BundledOfficialSkillsLoader().get(
+        rootBundle,
+        'AI 拆分镜',
+      );
+      expect(split.id, isNot(old.id));
+      expect(split.enabled, isTrue);
+      expect(split.sourceVersion, '1');
+      expect(split.prompt, splitSource.prompt);
+      expect(split.references, splitSource.references);
+      final current = setup.container.read(
+        installedAgentSkillsProvider.notifier,
+      );
+      await current.toggleEnabled(split.id);
+      setup.restart();
+      expect((await setup.sync()).installed, 0);
+      expect(
+        (await setup.skills())
+            .singleWhere((skill) => skill.id == split.id)
+            .enabled,
+        isFalse,
+      );
+      await setup.container
+          .read(installedAgentSkillsProvider.notifier)
+          .remove(split.id);
+      setup.restart();
+      expect((await setup.sync()).installed, 0);
+      expect(
+        (await setup.skills()).map((skill) => skill.id),
+        isNot(contains(split.id)),
+      );
+      expect(
+        (await setup.skills())
+            .singleWhere((skill) => skill.id == old.id)
+            .enabled,
+        isFalse,
+      );
+    },
+  );
+
+  test(
+    'packaged extraction preserves customized production and same-name local splitter',
+    () async {
+      final setup = _TestSetup(
+        AppDatabase.forTest(NativeDatabase.memory()),
+        _BundledCatalogService(),
+      );
+      addTearDown(setup.dispose);
+      final notifier = setup.container.read(
+        installedAgentSkillsProvider.notifier,
+      );
+      final production = await notifier.install(
+        const InstallSkillInput(
+          sourceKind: AgentSkillSourceKind.official,
+          sourceListingPublicId: '剧本制片',
+          sourceDisplayName: '剧本制片',
+          sourceVersion: '4',
+          name: '剧本制片',
+          description: 'customized production',
+          prompt: 'my production method',
+          enabled: false,
+        ),
+      );
+      await notifier.convertToNovelLocal(production.id);
+      final split = await notifier.createNovelLocalSkill(
+        const InstallSkillInput(
+          sourceKind: AgentSkillSourceKind.novelLocal,
+          name: 'AI 拆分镜',
+          description: 'local splitter',
+          prompt: 'my splitter method',
+          enabled: false,
+        ),
+      );
+      setup.restart();
+      final result = await setup.sync();
+      expect(result.failed, 0);
+      expect(result.upgraded, 0);
+      expect(result.installed, bundledOfficialSkillSpecs.length - 2);
+      final skills = await setup.skills();
+      for (final original in [production, split]) {
+        final kept = skills.singleWhere((skill) => skill.id == original.id);
+        expect(kept.sourceKind, AgentSkillSourceKind.novelLocal);
+        expect(kept.prompt, original.prompt);
+        expect(kept.enabled, original.enabled);
+        expect(kept.sortOrder, original.sortOrder);
+        expect(
+          skills.where((skill) => skill.name == original.name),
+          hasLength(1),
+        );
+      }
+      await setup.container
+          .read(installedAgentSkillsProvider.notifier)
+          .remove(split.id);
+      setup.restart();
+      expect((await setup.sync()).installed, 0);
+      expect(
+        (await setup.skills()).map((skill) => skill.name),
+        isNot(contains('AI 拆分镜')),
+      );
+    },
+  );
+
+  test(
     'merged catalog removes legacy installations and their child rows',
     () async {
       final setup = _TestSetup(
@@ -171,7 +335,7 @@ void main() {
       expect(upgraded.name, writing.name);
       expect(upgraded.enabled, isFalse);
       expect(upgraded.sortOrder, writing.sortOrder);
-      expect(upgraded.sourceVersion, '1');
+      expect(upgraded.sourceVersion, '4');
       expect(upgraded.references, hasLength(15));
       final slashSkills = await loadChatSlashSkills(db: setup.database);
       expect(

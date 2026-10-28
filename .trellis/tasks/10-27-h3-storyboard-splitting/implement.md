@@ -1,8 +1,40 @@
 # 实施与验收
 
-> 当前执行第四轮五文件范围。用户已批准“内容充实、优先约5秒但允许超过、最终H3格式”及本轮v3→v4；前轮仅为历史，不重复实施。不得派发缓存刷新或通用运行时实现。
+> 第五轮完整方案及新v1／制片v5／写作v4已获用户明确“同意”，进入实施。第一至第四轮均为历史，本轮以第五轮批准范围为准。
 
-## 第四轮实施清单
+## 第五轮规划与实施门禁
+
+- [x] 用户明确要求独立「AI 拆分镜」Skill，制作按钮明确指定，分镜与剧本职责分开；沿用当前任务，已将需求写入PRD并回到planning。
+- [x] 确认本地正式tag列表为空，旧v4发布状态未知；不凭源码版本或此前v3→v4批准擅自决定新一轮版本。
+- [x] 派发显式gpt-6.1-sol只读研究fa153928-66ee-405，核对拆分方法归属、所有调用与链接、注册资源、安装兼容和测试，不派发产品实施。
+- [x] 主会话审阅研究报告并核对实际按钮、旧写作/制片/操作技能、注册根目录限制、同步语义及资源声明；design明确独立official技能、九附件迁移和两个方法附件提取、旧制片/写作交接清理、注册资源及四测试修改。
+- [x] 本地正式tag缺失，两旧版本发布状态未知已披露；用户本轮单独批准新拆分v1、制片v4→v5、写作v3→v4。
+- [x] PRD完成第五轮收敛，旧轮保留为历史；重写implement/check manifests并加入新研究，验证真实条目及文件存在。
+- [x] 已向用户给出最终范围、验收、版本决定与实际效果风险；用户后续明确回复“同意”，本轮实施已获授权。
+- [x] 批准后两份manifests各12项验证通过，task.py start切换为in_progress；已派发显式gpt-6.1-sol implement 86aa536c-5075-4d9，限定第五轮范围、不递归委派、不提交，先运行按钮／新技能回归RED。
+- [x] 完成独立新技能及11附件（九份移动＋两份提取）、旧制片清理、写作/工具操作交接、按钮路由、注册和pubspec资源；主会话已逐项检查实际差异及完整新方法，未发现重复方法或循环加载前置条件。
+- [x] 实施串行测试79/79（region1、official26、control26、provider11、sync15），六Dart文件analyze无问题、format零改动、hash/99链接/迁移和范围审计通过；主会话已核对完整报告与实际日志结尾并独立重算全部14包指纹。LSP无server不计通过。
+- [x] 独立gpt-6.1-sol check 6b2d0b65-fc8b-410完成，串行独立79项通过，六文件分析/格式、14包指纹/99链接/原完整案例及迁移/范围检查通过。最终暂存检查发现新方法文件EOF多一空行，check移除一个LF并维护新技能hash/date；相关26＋11项、注册表分析/格式重跑通过，主会话重新运行全量审计通过。无范围内遗留问题，实际报告/diff/日志已核对；最终暂存副本刷新及cached diff检查作为提交前门禁。
+- [x] 完成spec判断并补齐既有backend质量文档七节抽取契约，独立审查确认一致；本任务scoped commit门禁满足，按预授权提交，成功及哈希以Git回执为准。不推送、不混入三项无关WIP、不改用户数据或安装库、不执行收费模型／媒体调用。
+
+### 第五轮验证命令（实施与独立检查均已执行）
+
+实施完成后已逐条串行执行，完整输出落`/tmp/reveric-independent-storyboard-*.log`，独立检查加`check-`。如遇失败定位根因，不降低断言或以编排假回复宣称创作改善。
+
+```bash
+timeout 240 fvm flutter test --no-pub --concurrency=1 test/desktop/features/storyboard/region_test.dart
+timeout 240 fvm flutter test --no-pub --concurrency=1 test/shared/services/bundled_official_skills_test.dart
+timeout 240 fvm flutter test --no-pub --concurrency=1 test/shared/services/bundled_control_skills_test.dart
+timeout 240 fvm flutter test --no-pub --concurrency=1 test/shared/providers/official_skill_sync_providers_test.dart
+timeout 240 fvm flutter test --no-pub --concurrency=1 test/shared/services/official_skill_sync_test.dart
+timeout 240 fvm flutter analyze --no-pub lib/desktop/features/storyboard/region.dart lib/shared/services/bundled_official_skills.dart test/desktop/features/storyboard/region_test.dart test/shared/services/bundled_official_skills_test.dart test/shared/services/bundled_control_skills_test.dart test/shared/providers/official_skill_sync_providers_test.dart
+fvm dart format --output=none --set-exit-if-changed lib/desktop/features/storyboard/region.dart lib/shared/services/bundled_official_skills.dart test/desktop/features/storyboard/region_test.dart test/shared/services/bundled_official_skills_test.dart test/shared/services/bundled_control_skills_test.dart test/shared/providers/official_skill_sync_providers_test.dart
+git diff --check
+```
+
+另外沿用现有hash算法和loader链接守卫，独立重算三份官方内容包指纹；核对pubspec新嵌套资源、九个移动文件及所有相对链接。没有生成源改动，不pub/codegen/clean/stash。实际模型请求、用户安装状态、视频成片、显存与设备验收未授权也未执行，必须明确报告。
+
+## 历史第四轮实施清单
 
 - [x] 对照官方与第三方实际技能／代码／案例，确认用户短片段软偏好及H3输出边界；完整运行证据另存，不将旧上下文推断为当前安装版本。
 - [x] 用户在明确目标和软约5秒、不可空洞的约束后要求实施；收敛到design.md列出的五文件，入口已有完整短时长软偏好，保持不动。

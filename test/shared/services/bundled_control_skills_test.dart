@@ -396,6 +396,38 @@ void main() {
   );
 
   test(
+    'screenplay operations delegate video authoring without owning its method',
+    () async {
+      final skill = (await loader.findByCallName(bundle, '剧本工具使用规范'))!;
+      final clips = skill.references
+          .singleWhere((ref) => ref.path == 'references/clips.md')
+          .content;
+      expect(skill.prompt, contains('Shot 格式由「AI 拆分镜」提供'));
+      expect(clips, contains('创作格式由「AI 拆分镜」提供'));
+      expect(clips, isNot(contains('创作格式由「剧本制片」提供')));
+      for (final contract in [
+        '`inputs` 是完整有序数组',
+        '`input_id` 必须对应有效输入',
+        '`ref_type=node`',
+        '生成时长要求整秒',
+        'generate-video',
+        '"clip_id"',
+        '"draft":true',
+        '"draft_task_id"',
+        '不重复调用生成命令',
+      ]) {
+        expect(clips, contains(contract));
+      }
+      expect(
+        await loader.findByCallName(bundle, 'AI 拆分镜'),
+        isNull,
+        reason:
+            'The optional official method must not become a bundled fallback.',
+      );
+    },
+  );
+
+  test(
     'full screenplay delivery checks records, references and saved body',
     () async {
       final skill = (await loader.findByCallName(bundle, '剧本工具使用规范'))!;

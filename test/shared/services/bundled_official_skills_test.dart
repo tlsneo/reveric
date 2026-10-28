@@ -39,14 +39,52 @@ void main() {
     bundle = _FileAssetBundle();
   });
 
+  test(
+    'independent splitter owns the complete method without production',
+    () async {
+      final tracking = _FileAssetBundle();
+      final detail = await loader.get(tracking, 'AI 拆分镜');
+      expect(detail.whenToUse, contains('拆分'));
+      expect(detail.prompt, contains('references/splitting.md'));
+      final method = detail.references
+          .singleWhere((ref) => ref.path == 'references/splitting.md')
+          .content;
+      for (final stage in [
+        '梳理原文事项',
+        '表演预算',
+        '确定独立生成分组',
+        '按目标模型编写',
+        '逐 Shot 核对',
+        '回读',
+      ]) {
+        expect(method, contains(stage));
+      }
+      expect(
+        detail.references.map((ref) => ref.path),
+        containsAll([
+          'references/storyboard.md',
+          'references/video-prompts.md',
+          'references/minimax-h3-prompts.md',
+          'references/scene-example.md',
+        ]),
+      );
+      expect(
+        tracking.loadedPaths,
+        everyElement(
+          startsWith('assets/official_skills/storyboard-splitting/'),
+        ),
+      );
+    },
+  );
+
   test('list returns all official skills in sort_order', () async {
     final result = await loader.list(bundle);
-    expect(result.agentSkills, hasLength(13));
+    expect(result.agentSkills, hasLength(14));
     expect(
       result.agentSkills
           .where((skill) => skill.category == '剧本')
           .map((skill) => skill.name),
-      ['剧本写作', '剧本制片'],
+      ['剧本写作', '剧本制片', 'AI 拆分镜'],
     );
     expect(result.agentSkills.map((skill) => skill.listingId).toList(), [
       for (final skill in result.agentSkills) skill.name,
@@ -164,7 +202,7 @@ void main() {
           reference.path: reference.content,
       };
 
-      expect(detail.version, 3);
+      expect(detail.version, 4);
       expect(detail.whenToUse, contains('混合草稿'));
       expect(detail.prompt, contains('用户粘贴内容'));
       expect(detail.prompt, contains('不要求用户先分类'));
@@ -249,7 +287,7 @@ void main() {
   );
 
   test('H3 defaults to Chinese prose without changing its fixed syntax', () async {
-    final detail = await loader.get(bundle, '剧本制片');
+    final detail = await loader.get(bundle, 'AI 拆分镜');
     final h3 = detail.references
         .singleWhere((ref) => ref.path == 'references/minimax-h3-prompts.md')
         .content;
@@ -265,7 +303,7 @@ void main() {
     for (final obsolete in ['一段英文', '句英文', '英文词', '350–500']) {
       expect(h3, isNot(contains(obsolete)), reason: obsolete);
     }
-    expect(detail.version, 4);
+    expect(detail.version, 1);
     expect(h3, contains('中文适配'));
     expect(h3, contains('不代表中文与英文的成片质量等价'));
     expect(h3, contains('`summary`：用中文'));
@@ -311,7 +349,7 @@ void main() {
   test(
     'H3 keyframe and full-reference examples keep Chinese field bodies',
     () async {
-      final detail = await loader.get(bundle, '剧本制片');
+      final detail = await loader.get(bundle, 'AI 拆分镜');
       final h3 = detail.references
           .singleWhere((ref) => ref.path == 'references/minimax-h3-prompts.md')
           .content;
@@ -413,11 +451,11 @@ void main() {
   );
 
   test(
-    'production requires a shootable plan before writing and readback',
+    'splitter requires a shootable plan before writing and readback',
     () async {
-      final detail = await loader.get(bundle, '剧本制片');
+      final detail = await loader.get(bundle, 'AI 拆分镜');
       final production = detail.references
-          .singleWhere((ref) => ref.path == 'references/production.md')
+          .singleWhere((ref) => ref.path == 'references/splitting.md')
           .content;
       expect(
         detail.prompt,
@@ -467,9 +505,9 @@ void main() {
   test(
     'explicit H3 full-reference target stays a draft until inputs are bound',
     () async {
-      final detail = await loader.get(bundle, '剧本制片');
+      final detail = await loader.get(bundle, 'AI 拆分镜');
       final production = detail.references
-          .singleWhere((ref) => ref.path == 'references/production.md')
+          .singleWhere((ref) => ref.path == 'references/splitting.md')
           .content;
       expect(production, contains('[MiniMax H3 提示词](minimax-h3-prompts.md)'));
       expect(production, contains('用户明确要求 H3 全参考'));
@@ -491,7 +529,7 @@ void main() {
   test(
     'screen-operation recipe has a timed six-field H3 prompt and visible ending',
     () async {
-      final detail = await loader.get(bundle, '剧本制片');
+      final detail = await loader.get(bundle, 'AI 拆分镜');
       final recipes = detail.references
           .singleWhere((ref) => ref.path == 'references/shot-recipes.md')
           .content;
@@ -642,11 +680,11 @@ void main() {
   );
 
   test(
-    'production budgets performances before independent generation groups',
+    'splitter budgets performances before independent generation groups',
     () async {
-      final detail = await loader.get(bundle, '剧本制片');
+      final detail = await loader.get(bundle, 'AI 拆分镜');
       final production = detail.references
-          .singleWhere((ref) => ref.path == 'references/production.md')
+          .singleWhere((ref) => ref.path == 'references/splitting.md')
           .content;
       final split = production
           .split('## 从场次拆分镜')
@@ -704,7 +742,7 @@ void main() {
   test(
     'whole-scene H3 drafts have coherent durations, cuts and budgets',
     () async {
-      final detail = await loader.get(bundle, '剧本制片');
+      final detail = await loader.get(bundle, 'AI 拆分镜');
       final scene = detail.references
           .singleWhere((ref) => ref.path == 'references/scene-example.md')
           .content;
@@ -847,7 +885,7 @@ void main() {
   test(
     'whole-scene spoken lines and irreversible actions belong to one shot',
     () async {
-      final detail = await loader.get(bundle, '剧本制片');
+      final detail = await loader.get(bundle, 'AI 拆分镜');
       final scene = detail.references
           .singleWhere((ref) => ref.path == 'references/scene-example.md')
           .content;
@@ -939,6 +977,76 @@ void main() {
       expect(scene, contains('A 与 B'));
       expect(scene, contains('B 与 C'));
       expect(scene, contains('不能证明实际表演'));
+    },
+  );
+
+  test(
+    'production retains assets and generation but not a competing split method',
+    () async {
+      final production = await loader.get(bundle, '剧本制片');
+      expect(production.version, 5);
+      expect(production.whenToUse, isNot(contains('将场次拆成分镜')));
+      expect(production.prompt, isNot(contains('原文事项与戏剧变化 →')));
+      expect(production.prompt, contains('「AI 拆分镜」'));
+      expect(
+        production.references.map((ref) => ref.path),
+        unorderedEquals([
+          'references/character-design.md',
+          'references/image-recipes.md',
+          'references/image-references.md',
+          'references/production.md',
+          'references/storyboard.md',
+          'references/troubleshooting.md',
+        ]),
+      );
+      final flow = production.references
+          .singleWhere((ref) => ref.path == 'references/production.md')
+          .content;
+      expect(flow, isNot(contains('## 从场次拆分镜')));
+      for (final retained in ['制作依赖', '可以并发', '必须串行', '看结果再返修', '实际文件']) {
+        expect(flow, contains(retained));
+      }
+      final staging = production.references
+          .singleWhere((ref) => ref.path == 'references/storyboard.md')
+          .content;
+      expect(staging, contains('45°'));
+      expect(staging, contains('使用导演台'));
+      expect(staging, isNot(contains('## 镜头职责与切点')));
+      final writing = await loader.get(bundle, '剧本写作');
+      expect(writing.prompt, contains('分镜及视频提示词创作使用「AI 拆分镜」'));
+      expect(writing.prompt, contains('视觉参考、生成及结果返修使用「剧本制片」'));
+    },
+  );
+
+  test(
+    'splitter defaults only unspecified drafts to H3 and keeps optional visual teaching',
+    () async {
+      final skill = await loader.get(bundle, 'AI 拆分镜');
+      final video = skill.references
+          .singleWhere((ref) => ref.path == 'references/video-prompts.md')
+          .content;
+      expect(video, contains('未选模型且用户未指定目标时'));
+      expect(video, contains('按中文 H3 格式写草稿'));
+      expect(video, contains('已选或明确指定的其他模型保留其对应格式'));
+      expect(video, contains('用户明确要求通用格式时'));
+      expect(video, isNot(contains('表中没有的模型、模型尚未选定')));
+      final scene = skill.references
+          .singleWhere((ref) => ref.path == 'references/scene-example.md')
+          .content;
+      for (final teaching in [
+        '仅在用户授权素材准备时',
+        '柜台空场提示词',
+        '蓝色铁盒的闭合与打开状态',
+        'B 的首帧提示词',
+        '不要求拆分前出图',
+      ]) {
+        expect(scene, contains(teaching));
+      }
+      expect(skill.prompt, contains('不偷偷回退旧制片方法或源码内容'));
+      expect(skill.prompt, contains('name` 使用「AI 拆分镜」'));
+      for (final ref in skill.references) {
+        expect(ref.content, isNot(contains('](production.md)')));
+      }
     },
   );
 
