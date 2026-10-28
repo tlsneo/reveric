@@ -1,0 +1,35 @@
+{
+  "id": "terra-model-support",
+  "name": "terra-model-support",
+  "title": "临时补齐 Terra 模型识别",
+  "description": "用户急用：只在现有本地目录登记 gpt-6.1-terra，暂沿用 sol 能力并补回归测试；远程 models.json 大方案继续搁置。",
+  "status": "in_progress",
+  "dev_type": "backend",
+  "scope": "ai",
+  "package": null,
+  "priority": "P1",
+  "creator": "tlsneo",
+  "assignee": "tlsneo",
+  "createdAt": "2026-10-28",
+  "completedAt": null,
+  "branch": "unstable",
+  "base_branch": "unstable",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "lib/shared/models/models_catalog.dart",
+    "test/shared/models/models_catalog_test.dart"
+  ],
+  "notes": "用户明确要求立即缩小到本地 Terra 登记；远程目录方案继续搁置。沿用 sol 配置是假设，不代表真实渠道已验证。",
+  "meta": {
+    "remoteCatalogImplementationApproved": false,
+    "implementationResult": "verified",
+    "independentTestsPassed": 43,
+    "liveServerVerified": false,
+    "specReview": "Existing exact/wildcard catalog mechanism reused; no new API/schema/infra contract or reusable convention, so no permanent spec addition is required."
+  }
+}

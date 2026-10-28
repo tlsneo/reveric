@@ -139,7 +139,13 @@ const Map<String, ModelCatalogEntry> modelsCatalog = {
   // https://developers.openai.com/api/docs/models/gpt-6-astra
   // https://developers.openai.com/api/docs/guides/latest-model
   'gpt-6-astra': ModelCatalogEntry(
-    matches: ['gpt-6-astra-*', 'gpt-6.1-sol', 'gpt-6.1-sol-*'],
+    matches: [
+      'gpt-6-astra-*',
+      'gpt-6.1-sol',
+      'gpt-6.1-sol-*',
+      'gpt-6.1-terra',
+      'gpt-6.1-terra-*',
+    ],
     modalities: ModelCatalogModalities(input: ['text', 'image']),
     reasoningEfforts: ['low', 'medium', 'high', 'xhigh', 'max'],
     limit: _gptLargeContextLimit,

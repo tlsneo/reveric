@@ -371,6 +371,50 @@ void main() {
     },
   );
 
+  test(
+    'Terra aliases preserve model IDs and share provisional Sol capabilities',
+    () {
+      const efforts = ['low', 'medium', 'high', 'xhigh', 'max'];
+      for (final model in [
+        'gpt-6.1-terra',
+        'openai/gpt-6.1-terra',
+        'devin/gpt-6.1-terra',
+        'gpt-6.1-terra-20261028',
+        'openai/gpt-6.1-terra:variant',
+      ]) {
+        expect(lookupCatalogReasoningEfforts(model), efforts, reason: model);
+        expect(lookupCatalogLimit(model)?.context, 560000, reason: model);
+        expect(lookupCatalogLimit(model)?.output, 128000, reason: model);
+        expect(lookupCatalogImageInput(model), isTrue, reason: model);
+
+        final settings = AiSettings(
+          providers: [
+            _reasoningProvider.copyWith(models: [model]),
+          ],
+        );
+        final option = settings.availableModelOptions.single;
+        expect(option.model, model);
+        expect(option.reasoningEfforts, efforts);
+        expect(option.supportsImageInput, isTrue);
+        expect(reasoningEffortForOption(option, null), 'medium');
+        final selected = settings.setDefaultOptionId(
+          AiModelKind.chat,
+          option.id,
+        );
+        expect(selected.defaultChatReasoningEffort, 'medium');
+        expect(
+          resolveSessionReasoningEffort(
+            providerId: _reasoningProvider.id,
+            model: model,
+            settings: selected,
+          ),
+          'medium',
+        );
+      }
+      expect(lookupCatalogReasoningEfforts('gpt-6.1-sol'), efforts);
+    },
+  );
+
   test('new model entries have rounded limits and supported effort levels', () {
     const cases = [
       (
